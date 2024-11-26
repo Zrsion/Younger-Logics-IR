@@ -1,1 +1,2 @@
-# Younger-IR
+# Younger-Logic-IR
+Younger - Logic - Intermediate Representation
