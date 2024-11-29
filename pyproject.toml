@@ -1,0 +1,61 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["younger_logics_ir"]
+exclude = ["test"]
+
+[project]
+name = "Younger-Logics-IR"
+description = "Provides a Unified Intermediate Representation For Neural Networks, Enabling Framework-Agnostic Analysis, Conversion, and Optimization."
+version = "0.0.1alpha1"
+readme = "README.md"
+requires-python = ">=3.11"
+license = {text = "Apache Software License"}
+keywords = ["Younger", "Logic", "Deep Learning", "DAG", "Intermediate Representation"]
+authors = [{name = "Jason-Young-AI", email = "AI.Jason.Young@outlook.com"}]
+maintainers = [{name = "Jason-Young-AI", email = "AI.Jason.Young@outlook.com"}]
+classifiers=[
+    "Development Status :: 3 - Alpha",
+
+    'Intended Audience :: Developers',
+    'Intended Audience :: Education',
+    'Intended Audience :: Science/Research',
+    'Topic :: Scientific/Engineering :: Artificial Intelligence',
+
+    'License :: OSI Approved :: Apache Software License',
+
+    'Operating System :: OS Independent',
+
+    'Programming Language :: Python :: 3',
+    'Programming Language :: Python :: 3.11',
+    "Programming Language :: Python :: 3 :: Only",
+]
+
+dependencies = [
+    "tqdm",
+    "click",
+    "psutil",
+    "pandas",
+    "networkx",
+    "python-semantic-release"
+]
+
+[project.optional-dependencies]
+construct = ["torch-geometric"]
+developer = [
+    "sphinx"
+]
+
+[project.urls]
+Homepage = "https://younger.yangs.ai/logics/ir"
+Issues = "https://github.com/Yangs-AI/Younger-Logics-IR/issues"
+Source = "https://github.com/Yangs-AI/Younger-Logics-IR"
+Repository = "https://github.com/Yangs-AI/Younger-Logics-IR.git"
+
+[project.scripts]
+younger-logics-ir = "younger_logics_ir.commands.main:main"
+
+[project.entry-points."younger.logics"]
+ir = "younger_logics_ir.commands.main:main"
