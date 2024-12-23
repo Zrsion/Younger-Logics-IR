@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2024-11-27 15:32:57
+# Last Modified time: 2024-12-23 09:13:48
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -14,93 +14,68 @@
 ########################################################################
 
 
-import onnx
 import pathlib
-
-from typing import Any
 
 from younger.commons.io import load_json, save_json
 from younger.commons.version import semantic_release, str_to_sem
 
 from younger_logics_ir.modules.meta import Meta
-from younger_logics_ir.modules.network import Network
-
-from younger_logics_ir.utils.io import load_model, check_model
-from younger_logics_ir.utils.constants import InstanceLabelName
-from younger_logics_ir.utils.translation import trans_model_proto
+from younger_logics_ir.modules.label import Label
+from younger_logics_ir.modules.logicx import LogicX
 
 
 class Instance(object):
-    def __init__(
-            self,
-            model: onnx.ModelProto | pathlib.Path | None = None,
-            labels: dict[str, str] | None = None,
-            version: semantic_release.Version | None = None,
-    ) -> None:
-        model = model or onnx.ModelProto()
-        labels = labels or dict()
-        version = version or str_to_sem('0.0.0')
-
-        self._meta_filename = 'meta.json'
+    _meta_filename = 'meta'
+    _struct_filename = 'struct.bin'
+    _labels_filename = 'labels.lbl'
+    _unique_filename = 'unique.pln'
+    def __init__(self) -> None:
         self._meta: Meta = Meta(fresh_checker=self.fresh_checker)
-
-        self._network_dirname = 'network'
-        self._network = Network()
-
-        self._labels_filename = 'label.json'
-        self._labels = dict()
-        for attribute in InstanceLabelName.attributes:
-            label_name = getattr(InstanceLabelName, attribute)
-            self._labels[label_name] = None
-
-        self._unique_filename = 'unique.id'
+        self._logicx: LogicX = LogicX()
+        self._labels: list[Label] = list()
         self._unique = None
-
-        self.setup_labels(labels)
-        self.setup(model)
-        self.release(version)
 
     @property
     def meta(self) -> Meta:
         return self._meta
 
     @property
-    def labels(self) -> dict[str, Any]:
+    def logicx(self) -> LogicX:
+        return self._logicx
+
+    @property
+    def labels(self) -> set[Label]:
         return self._labels
 
     @property
-    def network(self) -> Network:
-        return self._network
-
-    @property
-    def unique(self) -> str | None:
+    def unique(self) -> str:
         return self._unique
 
     def fresh_checker(self) -> bool:
-        return self._unique is None
+        return self._unique == ''
 
     def load(self, instance_dirpath: pathlib.Path) -> None:
         assert instance_dirpath.is_dir(), f'There is no \"Instance\" can be loaded from the specified directory \"{instance_dirpath.absolute()}\".'
-        meta_filepath = instance_dirpath.joinpath(self._meta_filename)
+        meta_filepath = instance_dirpath.joinpath(self.__class__._meta_filename)
         self._load_meta(meta_filepath)
-        unique_filepath = instance_dirpath.joinpath(self._unique_filename)
-        self._load_unique(unique_filepath)
-        labels_filepath = instance_dirpath.joinpath(self._labels_filename)
+        logicx_filepath = instance_dirpath.joinpath(self.__class__._logicx_filename)
+        self._load_logicx(logicx_filepath)
+        labels_filepath = instance_dirpath.joinpath(self.__class__._labels_filename)
         self._load_labels(labels_filepath)
-        network_dirpath = instance_dirpath.joinpath(self._network_dirname)
-        self._load_network(network_dirpath)
-        return 
+        unique_filepath = instance_dirpath.joinpath(self.__class__._unique_filename)
+        self._load_unique(unique_filepath)
+        return
 
     def save(self, instance_dirpath: pathlib.Path) -> None:
         assert not instance_dirpath.is_dir(), f'\"Instance\" can not be saved into the specified directory \"{instance_dirpath.absolute()}\".'
-        meta_filepath = instance_dirpath.joinpath(self._meta_filename)
+        meta_filepath = instance_dirpath.joinpath(self.__class__._meta_filename)
         self._save_meta(meta_filepath)
-        unique_filepath = instance_dirpath.joinpath(self._unique_filename)
-        self._save_unique(unique_filepath)
-        labels_filepath = instance_dirpath.joinpath(self._labels_filename)
+        logicx_filepath = instance_dirpath.joinpath(self.__class__._logicx_filename)
+        self._save_logicx(logicx_filepath)
+        labels_filepath = instance_dirpath.joinpath(self.__class__._labels_filename)
         self._save_labels(labels_filepath)
-        network_dirpath = instance_dirpath.joinpath(self._network_dirname)
-        self._save_network(network_dirpath)
+        unique_filepath = instance_dirpath.joinpath(self.__class__._unique_filename)
+        self._save_unique(unique_filepath)
         return
 
     def _load_meta(self, meta_filepath: pathlib.Path) -> None:
@@ -113,6 +88,26 @@ class Instance(object):
         self._meta.save(meta_filepath)
         return
 
+    def _load_logicx(self, logicx_filepath: pathlib.Path) -> None:
+        assert logicx_filepath.is_file(), f'There is no \"LogicX\" can be loaded from the specified path \"{logicx_filepath.absolute()}\".'
+        self._logicx.load(logicx_filepath)
+        return
+
+    def _save_logicx(self, logicx_filepath: pathlib.Path) -> None:
+        assert not logicx_filepath.is_file(), f'\"LogicX\" can not be saved into the specified path \"{logicx_filepath.absolute()}\".'
+        self._logicx.save(logicx_filepath)
+        return
+
+    def _load_labels(self, labels_filepath: pathlib.Path) -> None:
+        assert labels_filepath.is_file(), f'There is no \"Lables\" can be loaded from the specified path \"{labels_filepath.absolute()}\".'
+        self._labels = [Label.loads(s) for s in load_json(labels_filepath)]
+        return
+
+    def _save_labels(self, labels_filepath: pathlib.Path) -> None:
+        assert not labels_filepath.is_file(), f'\"Labels\" can not be saved into the specified path \"{labels_filepath.absolute()}\".'
+        save_json([Label.saves(l) for l in self._labels], labels_filepath)
+        return
+
     def _load_unique(self, unique_filepath: pathlib.Path) -> None:
         assert unique_filepath.is_file(), f'There is no \"Unique ID\" can be loaded from the specified path \"{unique_filepath.absolute()}\".'
         self._unique = load_json(unique_filepath)
@@ -123,63 +118,29 @@ class Instance(object):
         save_json(self._unique, unique_filepath)
         return
 
-    def _load_labels(self, labels_filepath: pathlib.Path) -> None:
-        assert labels_filepath.is_file(), f'There is no \"Lables\" can be loaded from the specified path \"{labels_filepath.absolute()}\".'
-        self._labels = load_json(labels_filepath)
-        return
-
-    def _save_labels(self, labels_filepath: pathlib.Path) -> None:
-        assert not labels_filepath.is_file(), f'\"Labels\" can not be saved into the specified path \"{labels_filepath.absolute()}\".'
-        save_json(self._labels, labels_filepath)
-        return
-
-    def _load_network(self, network_dirpath: pathlib.Path) -> None:
-        assert network_dirpath.is_dir(), f'There is no \"Network\" can be loaded from the specified directory \"{network_dirpath.absolute()}\".'
-        self._network.load(network_dirpath)
-        return
-
-    def _save_network(self, network_dirpath: pathlib.Path) -> None:
-        assert not network_dirpath.is_dir(), f'\"Network\" can not be saved into the specified directory \"{network_dirpath.absolute()}\".'
-        self._network.save(network_dirpath)
-        return
-
-    def clean_labels(self) -> None:
-        self._labels = dict()
-        return
-
-    def setup_labels(self, labels: dict[str, str]) -> None:
+    def setup_logicx(self, logicx: LogicX) -> None:
+        assert isinstance(logicx, LogicX), f'Argument \"logicx\" must be LogicX instead \"{type(logicx)}\"!'
+        assert logicx.valid, f'Argument \"logicx\" must be valid!'
         if self.meta.is_fresh:
-            for label_key, label_value in labels.items():
-                self._labels[label_key] = label_value
+            self._logicx = logicx
+            self._unique = LogicX.uuid(self._logicx)
         return
 
-    def setup(self, model_handler: onnx.ModelProto | pathlib.Path) -> None:
-        assert isinstance(model_handler, onnx.ModelProto) or isinstance(model_handler, pathlib.Path), f'Argument \"model_handler\" must be an ONNX Model Proto (onnx.ModelProto) or a Path (pathlib.Path) instead \"{type(model_handler)}\"!'
-        # Unset Unique Due To OOM and Huge External Data
+    def insert_label(self, label: Label) -> None:
         if self.meta.is_fresh:
-            unique = None
-
-            if check_model(model_handler):
-                if isinstance(model_handler, onnx.ModelProto):
-                    model = model_handler
-                if isinstance(model_handler, pathlib.Path):
-                    model = load_model(model_handler)
-
-                self._network = Network(trans_model_proto(model, neglect_tensor_values=True))
-            else:
-                # TODO: If Check Is Invalid, There Is No model
+            if label in self._labels:
                 pass
-
-            # TODO: Set Unique
-            self._unique = unique
+            else:
+                self._labels.append(label)
         return
 
-    def copy(self) -> 'Instance':
-        # TODO:  Optimize this method, as assigning network values involves significant memory consumption.
-        instance = Instance()
-        instance._network = self._network
-        instance._unique = self._unique
-        return instance
+    def delete_label(self, label: Label) -> None:
+        if self.meta.is_fresh:
+            if label in self._labels:
+                self._labels.remove(label)
+            else:
+                pass
+        return
 
     def insert(self) -> bool:
         if self.meta.is_fresh:
@@ -206,6 +167,3 @@ class Instance(object):
             if self.meta.is_new:
                 self.meta.set_release(version)
         return
-
-    def setup_network(self, network: Network):
-        self._network = network

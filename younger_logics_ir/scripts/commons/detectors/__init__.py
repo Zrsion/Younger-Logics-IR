@@ -2,11 +2,11 @@
 # -*- encoding=utf8 -*-
 
 ########################################################################
-# Created time: 2024-11-27 15:51:12
+# Created time: 2024-08-27 18:03:44
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2024-12-11 14:59:33
+# Last Modified time: 2024-12-13 15:45:56
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -14,12 +14,7 @@
 ########################################################################
 
 
-from younger.commons.logging import set_logger, use_logger
-
-from younger_logics_ir import __thename__
-
-
-def equip_logger(logging_filepath):
-    set_logger(__thename__, mode='both', level='INFO', logging_filepath=logging_filepath)
-    use_logger(__thename__)
-
+from younger_logics_ir.scripts.commons.detectors.langs import detect_natural_langs, detect_program_langs
+from younger_logics_ir.scripts.commons.detectors.tasks import detect_task
+from younger_logics_ir.scripts.commons.detectors.datasets import detect_dataset_name, detect_dataset_split
+from younger_logics_ir.scripts.commons.detectors.metrics import detect_metric_name, normalize_metric_value

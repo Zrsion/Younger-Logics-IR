@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2024-11-27 15:31:44
+# Last Modified time: 2024-12-16 10:56:05
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -16,6 +16,7 @@
 
 from .dataset import Dataset
 from .instance import Instance
-from .network import Network
+from .logicx import LogicX
+from .label import Label
 from .stamp import Stamp
 from .meta import Meta

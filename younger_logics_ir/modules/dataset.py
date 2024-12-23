@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2024-11-27 15:33:05
+# Last Modified time: 2024-12-16 19:49:14
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -16,8 +16,6 @@
 
 import tqdm
 import pathlib
-
-from typing import Generator
 
 from younger.commons.io import load_json, save_json
 from younger.commons.hash import hash_strings
@@ -29,6 +27,9 @@ from younger_logics_ir.modules.instance import Instance
 
 
 class Dataset(object):
+    _stamps_filename = 'stamps.json'
+    _uniques_filename = 'uniques.json'
+    _instances_dirname = 'instances'
     def __init__(
             self,
             instances: list[Instance] | None = None,
@@ -37,13 +38,8 @@ class Dataset(object):
         instances = instances or list()
         version = version or str_to_sem('0.0.0')
 
-        self._stamps_filename = 'stamps.json'
         self._stamps: set[Stamp] = set()
-
-        self._uniques_filename = 'uniques.json'
         self._uniques: list[str] = list()
-
-        self._instances_dirname = 'instances'
         self._instances: dict[str, Instance] = dict()
 
         self.insert_instances(instances)
@@ -76,22 +72,22 @@ class Dataset(object):
     def load(self, dataset_dirpath: pathlib.Path) -> None:
         assert dataset_dirpath.is_dir(), f'There is no \"Dataset\" can be loaded from the specified directory \"{dataset_dirpath.absolute()}\".'
         logger.info(f' = [YBD] = Loading Dataset @ {dataset_dirpath}...')
-        stamps_filepath = dataset_dirpath.joinpath(self._stamps_filename)
+        stamps_filepath = dataset_dirpath.joinpath(self.__class__._stamps_filename)
         self._load_stamps(stamps_filepath)
-        uniques_filepath = dataset_dirpath.joinpath(self._uniques_filename)
+        uniques_filepath = dataset_dirpath.joinpath(self.__class__._uniques_filename)
         self._load_uniques(uniques_filepath)
-        instances_dirpath = dataset_dirpath.joinpath(self._instances_dirname)
+        instances_dirpath = dataset_dirpath.joinpath(self.__class__._instances_dirname)
         self._load_instances(instances_dirpath)
         return
 
     def save(self, dataset_dirpath: pathlib.Path) -> None:
         assert not dataset_dirpath.is_dir(), f'\"Dataset\" can not be saved into the specified directory \"{dataset_dirpath.absolute()}\".'
         logger.info(f' = [YBD] = Saving Dataset @ {dataset_dirpath}...')
-        stamps_filepath = dataset_dirpath.joinpath(self._stamps_filename)
+        stamps_filepath = dataset_dirpath.joinpath(self.__class__._stamps_filename)
         self._save_stamps(stamps_filepath)
-        uniques_filepath = dataset_dirpath.joinpath(self._uniques_filename)
+        uniques_filepath = dataset_dirpath.joinpath(self.__class__._uniques_filename)
         self._save_uniques(uniques_filepath)
-        instances_dirpath = dataset_dirpath.joinpath(self._instances_dirname)
+        instances_dirpath = dataset_dirpath.joinpath(self.__class__._instances_dirname)
         self._save_instances(instances_dirpath)
         return
 
@@ -126,21 +122,25 @@ class Dataset(object):
     def _load_instances(self, instances_dirpath: pathlib.Path) -> None:
         assert instances_dirpath.is_dir(), f'There is no \"Instance\"s can be loaded from the specified directory \"{instances_dirpath.absolute()}\".'
         logger.info(f' = [YBD] = Loading Instances ...')
-        for index, unique in enumerate(self._uniques):
-            logger.info(f' = [YBD] = No.{index} Instance: {unique}')
-            instance_dirpath = instances_dirpath.joinpath(f'{index}-{unique}')
-            self._instances[unique] = Instance()
-            self._instances[unique].load(instance_dirpath)
+        with tqdm.tqdm(total=len(self._uniques), desc='Load Instance') as progress_bar:
+            for index, unique in enumerate(self._uniques):
+                logger.info(f' = [YBD] = No.{index} Instance: {unique}')
+                instance_dirpath = instances_dirpath.joinpath(f'{index}-{unique}')
+                self._instances[unique] = Instance()
+                self._instances[unique].load(instance_dirpath)
+                progress_bar.update(1)
         return
 
     def _save_instances(self, instances_dirpath: pathlib.Path) -> None:
         assert not instances_dirpath.is_dir(), f'\"Instance\"s can not be saved into the specified directory \"{instances_dirpath.absolute()}\".'
         logger.info(f' = [YBD] = Saving Instances ...')
-        for index, unique in enumerate(self._uniques):
-            logger.info(f' = [YBD] = No.{index+1} Instance: {unique}')
-            instance_dirpath = instances_dirpath.joinpath(f'{index}-{unique}')
-            instance = self._instances[unique]
-            instance.save(instance_dirpath)
+        with tqdm.tqdm(total=len(self._uniques), desc='Save Instance') as progress_bar:
+            for index, unique in enumerate(self._uniques):
+                logger.info(f' = [YBD] = No.{index+1} Instance: {unique}')
+                instance_dirpath = instances_dirpath.joinpath(f'{index}-{unique}')
+                instance = self._instances[unique]
+                instance.save(instance_dirpath)
+                progress_bar.update(1)
         return
 
     def acquire(self, version: semantic_release.Version) -> 'Dataset':
@@ -223,18 +223,3 @@ class Dataset(object):
         else:
             self._stamps.add(stamp)
         return
-
-    @classmethod
-    def load_instances(cls, dataset_dirpath: pathlib.Path | str) -> Generator[Instance, None, None]:
-        dataset_dirpath = pathlib.Path(dataset_dirpath) if isinstance(dataset_dirpath, str) else dataset_dirpath
-
-        instance_dirpaths = list(dataset_dirpath.iterdir())
-        with tqdm.tqdm(total=len(instance_dirpaths), desc='Processing Instance') as progress_bar:
-            for instance_dirpath in instance_dirpaths:
-                instance = Instance()
-                try:
-                    instance.load(instance_dirpath)
-                    yield instance
-                except:
-                    continue
-                progress_bar.update(1)

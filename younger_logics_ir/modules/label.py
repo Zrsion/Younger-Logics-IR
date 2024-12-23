@@ -2,11 +2,11 @@
 # -*- encoding=utf8 -*-
 
 ########################################################################
-# Created time: 2024-11-27 15:51:12
+# Created time: 2024-12-16 10:31:35
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2024-12-11 14:59:33
+# Last Modified time: 2024-12-23 16:51:23
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -14,12 +14,16 @@
 ########################################################################
 
 
-from younger.commons.logging import set_logger, use_logger
+class Label(object):
+    def __init__(
+        self,
+        source
+    ) -> None:
+        pass
 
-from younger_logics_ir import __thename__
+    def __hash__(self) -> int:
+        hash()
+        pass
 
-
-def equip_logger(logging_filepath):
-    set_logger(__thename__, mode='both', level='INFO', logging_filepath=logging_filepath)
-    use_logger(__thename__)
-
+    def __eq__(self) -> bool:
+        pass

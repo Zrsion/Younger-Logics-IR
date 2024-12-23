@@ -43,6 +43,8 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+scripts = ['onnx', 'huggingface_hub', 'torchvision', 'isocodes', 'yaml']
+
 construct = ["torch-geometric"]
 developer = [
     "sphinx"
