@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2024-12-23 09:13:48
+# Last Modified time: 2024-12-24 15:33:48
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -26,7 +26,7 @@ from younger_logics_ir.modules.logicx import LogicX
 
 class Instance(object):
     _meta_filename = 'meta'
-    _struct_filename = 'struct.bin'
+    _logicx_filename = 'logicx.bin'
     _labels_filename = 'labels.lbl'
     _unique_filename = 'unique.pln'
     def __init__(self):

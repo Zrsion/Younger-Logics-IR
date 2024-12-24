@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2024-12-16 19:49:14
+# Last Modified time: 2024-12-24 15:33:30
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -71,7 +71,7 @@ class Dataset(object):
 
     def load(self, dataset_dirpath: pathlib.Path) -> None:
         assert dataset_dirpath.is_dir(), f'There is no \"Dataset\" can be loaded from the specified directory \"{dataset_dirpath.absolute()}\".'
-        logger.info(f' = [YBD] = Loading Dataset @ {dataset_dirpath}...')
+        logger.info(f' = [YL-IR] = Loading Dataset @ {dataset_dirpath}...')
         stamps_filepath = dataset_dirpath.joinpath(self.__class__._stamps_filename)
         self._load_stamps(stamps_filepath)
         uniques_filepath = dataset_dirpath.joinpath(self.__class__._uniques_filename)
@@ -82,7 +82,7 @@ class Dataset(object):
 
     def save(self, dataset_dirpath: pathlib.Path) -> None:
         assert not dataset_dirpath.is_dir(), f'\"Dataset\" can not be saved into the specified directory \"{dataset_dirpath.absolute()}\".'
-        logger.info(f' = [YBD] = Saving Dataset @ {dataset_dirpath}...')
+        logger.info(f' = [YL-IR] = Saving Dataset @ {dataset_dirpath}...')
         stamps_filepath = dataset_dirpath.joinpath(self.__class__._stamps_filename)
         self._save_stamps(stamps_filepath)
         uniques_filepath = dataset_dirpath.joinpath(self.__class__._uniques_filename)
@@ -121,10 +121,10 @@ class Dataset(object):
 
     def _load_instances(self, instances_dirpath: pathlib.Path) -> None:
         assert instances_dirpath.is_dir(), f'There is no \"Instance\"s can be loaded from the specified directory \"{instances_dirpath.absolute()}\".'
-        logger.info(f' = [YBD] = Loading Instances ...')
+        logger.info(f' = [YL-IR] = Loading Instances ...')
         with tqdm.tqdm(total=len(self._uniques), desc='Load Instance') as progress_bar:
             for index, unique in enumerate(self._uniques):
-                logger.info(f' = [YBD] = No.{index} Instance: {unique}')
+                logger.info(f' = [YL-IR] = No.{index} Instance: {unique}')
                 instance_dirpath = instances_dirpath.joinpath(f'{index}-{unique}')
                 self._instances[unique] = Instance()
                 self._instances[unique].load(instance_dirpath)
@@ -133,10 +133,10 @@ class Dataset(object):
 
     def _save_instances(self, instances_dirpath: pathlib.Path) -> None:
         assert not instances_dirpath.is_dir(), f'\"Instance\"s can not be saved into the specified directory \"{instances_dirpath.absolute()}\".'
-        logger.info(f' = [YBD] = Saving Instances ...')
+        logger.info(f' = [YL-IR] = Saving Instances ...')
         with tqdm.tqdm(total=len(self._uniques), desc='Save Instance') as progress_bar:
             for index, unique in enumerate(self._uniques):
-                logger.info(f' = [YBD] = No.{index+1} Instance: {unique}')
+                logger.info(f' = [YL-IR] = No.{index+1} Instance: {unique}')
                 instance_dirpath = instances_dirpath.joinpath(f'{index}-{unique}')
                 instance = self._instances[unique]
                 instance.save(instance_dirpath)
@@ -144,12 +144,12 @@ class Dataset(object):
         return
 
     def acquire(self, version: semantic_release.Version) -> 'Dataset':
-        logger.info(f' = [YBD] = Acquiring Dataset: version = {version}...')
+        logger.info(f' = [YL-IR] = Acquiring Dataset: version = {version}...')
         dataset = Dataset()
         for index, unique in enumerate(self._uniques):
             instance = self._instances[unique]
             if (instance.meta.release and instance.meta.release_version <= version) and (not instance.meta.retired or version < instance.meta.retired_version):
-                logger.info(f' = [YBD] = Acquired No.{index+1} Instance: {unique}')
+                logger.info(f' = [YL-IR] = Acquired No.{index+1} Instance: {unique}')
                 dataset.insert(instance)
         dataset.release(version=version)
         return dataset
