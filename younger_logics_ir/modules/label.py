@@ -55,7 +55,6 @@ class Label(object):
 
     def __hash__(self) -> int:
         hash()
-        pass
 
     def __eq__(self) -> bool:
         pass
