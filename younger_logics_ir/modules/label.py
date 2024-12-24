@@ -27,7 +27,7 @@ class Origin(object):
 
 
 class Evaluation(object):
-    def __init__(self, task: str, dataset: str, results: dict[str, Any] | = None):
+    def __init__(self, task: str, dataset: str, results: dict[str, Any] | None = None):
         self._task = task
         self._dataset = dataset
         self._results = results or dict()
