@@ -34,7 +34,7 @@ class Dataset(object):
             self,
             instances: list[Instance] | None = None,
             version: semantic_release.Version | None = None
-    ) -> None:
+    ):
         instances = instances or list()
         version = version or str_to_sem('0.0.0')
 

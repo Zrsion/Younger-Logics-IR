@@ -14,16 +14,56 @@
 ########################################################################
 
 
+from typing import Any
+
+
+class Origin(object):
+    def __init__(self, hub: str, owner: str, name: str, like: int, download: int):
+        self._hub = hub
+        self._owner = owner
+        self._name = name
+        self._like = like
+        self._download = download
+
+
+class Evaluation(object):
+    def __init__(self, task: str, dataset: str, results: dict[str, Any] | = None):
+        self._task = task
+        self._dataset = dataset
+        self._results = results or dict()
+
+    def clean_results(self) -> None:
+        self._results.clear()
+
+    def insert_result(self, metric_name: str, metric_value: Any) -> Any:
+        self._results[metric_name] = metric_value
+        return self._results[metric_name]
+
+    def delete_result(self, metric_name: str) -> Any:
+        metric_value = self._results.pop(metric_name)
+        return metric_value
+
+    def update_result(self, metric_name: str, metric_value: Any) -> None:
+        self._results[metric_name] = metric_value
+        return self._results[metric_name]
+
+
 class Label(object):
-    def __init__(
-        self,
-        source
-    ) -> None:
-        pass
+    def __init__(self, origins: list[Origin] | None = None, evaluations: list[Evaluation] | None = None):
+        self._origins = origins or list()
+        self._evaluations = evaluations or list()
 
     def __hash__(self) -> int:
         hash()
         pass
 
     def __eq__(self) -> bool:
+        pass
+
+    @classmethod
+    def loads(cls, txt: str) -> 'Label':
+        pass
+
+    @classmethod
+    def saves(cls, lbl: 'Label') -> str:
         pass

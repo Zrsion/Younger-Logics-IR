@@ -24,7 +24,7 @@ from younger.commons.hash import hash_string
 
 
 class LogicX(object):
-    def __init__(self, src: Literal['onnx', 'core'] | None = None, dag: networkx.DiGraph | None = None) -> None:
+    def __init__(self, src: Literal['onnx', 'core'] | None = None, dag: networkx.DiGraph | None = None):
         assert src in {'onnx', 'core'} or src is None, f'Argument \"src\" must be in {{"onnx", "core"}} instead \"{type(src)}\"!'
         assert isinstance(dag, networkx.DiGraph) or dag is None, f'Argument \"dag\" must be `networkx.DiGraph` instead \"{type(dag)}\"!'
         self._src = src

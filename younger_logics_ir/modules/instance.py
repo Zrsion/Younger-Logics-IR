@@ -29,7 +29,7 @@ class Instance(object):
     _struct_filename = 'struct.bin'
     _labels_filename = 'labels.lbl'
     _unique_filename = 'unique.pln'
-    def __init__(self) -> None:
+    def __init__(self):
         self._meta: Meta = Meta(fresh_checker=self.fresh_checker)
         self._logicx: LogicX = LogicX()
         self._labels: list[Label] = list()

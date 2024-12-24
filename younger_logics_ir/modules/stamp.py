@@ -19,7 +19,7 @@ from younger.commons.version import semantic_release, check_semantic, str_to_sem
 
 
 class Stamp(object):
-    def __init__(self, version: str, checksum: str) -> None:
+    def __init__(self, version: str, checksum: str):
         assert check_semantic(version), f'The version provided must follow the SemVer 2.0.0 Specification.'
         self._version = str_to_sem(version)
 

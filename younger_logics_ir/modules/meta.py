@@ -29,7 +29,7 @@ class Meta(object):
             retired: bool = False,
             retired_version: str | None = None,
             private: bool = False,
-    ) -> None:
+    ):
         if release:
             assert check_semantic(release_version), f'The release version provided must follow the SemVer 2.0.0 Specification.'
             release_version = str_to_sem(release_version)
