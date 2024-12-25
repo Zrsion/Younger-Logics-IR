@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2024-12-24 15:33:48
+# Last Modified time: 2024-12-25 14:37:18
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -20,7 +20,7 @@ from younger.commons.io import load_json, save_json
 from younger.commons.version import semantic_release, str_to_sem
 
 from younger_logics_ir.modules.meta import Meta
-from younger_logics_ir.modules.label import Label
+from younger_logics_ir.modules.label import Implementation
 from younger_logics_ir.modules.logicx import LogicX
 
 
@@ -32,7 +32,7 @@ class Instance(object):
     def __init__(self):
         self._meta: Meta = Meta(fresh_checker=self.fresh_checker)
         self._logicx: LogicX = LogicX()
-        self._labels: list[Label] = list()
+        self._labels: list[Implementation] = list()
         self._unique = None
 
     @property
@@ -44,7 +44,7 @@ class Instance(object):
         return self._logicx
 
     @property
-    def labels(self) -> set[Label]:
+    def labels(self) -> list[Implementation]:
         return self._labels
 
     @property
@@ -100,12 +100,12 @@ class Instance(object):
 
     def _load_labels(self, labels_filepath: pathlib.Path) -> None:
         assert labels_filepath.is_file(), f'There is no \"Lables\" can be loaded from the specified path \"{labels_filepath.absolute()}\".'
-        self._labels = [Label.loads(s) for s in load_json(labels_filepath)]
+        self._labels = [Implementation.loads(s) for s in load_json(labels_filepath)]
         return
 
     def _save_labels(self, labels_filepath: pathlib.Path) -> None:
         assert not labels_filepath.is_file(), f'\"Labels\" can not be saved into the specified path \"{labels_filepath.absolute()}\".'
-        save_json([Label.saves(l) for l in self._labels], labels_filepath)
+        save_json([Implementation.saves(l) for l in self._labels], labels_filepath)
         return
 
     def _load_unique(self, unique_filepath: pathlib.Path) -> None:
