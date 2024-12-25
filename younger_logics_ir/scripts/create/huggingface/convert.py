@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2024-12-23 16:40:51
+# Last Modified time: 2024-12-25 17:10:49
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -29,7 +29,8 @@ from huggingface_hub.utils._errors import RepositoryNotFoundError
 from younger.commons.io import load_json, create_dir, delete_dir, get_human_readable_size_representation
 from younger.commons.logging import logger
 
-from younger_logics_ir.modules import Instance
+from younger_logics_ir.converters import convert
+from younger_logics_ir.modules import Instance, LogicX, Implementation, Origin, Benchmark, Evaluation
 
 from younger_logics_ir.dataset.utils import get_instance_dirname
 from younger_logics_ir.scripts.commons.huggingface_utils import infer_model_size, clean_model_default_cache, clean_model_specify_cache, get_huggingface_model_readme, get_huggingface_model_card_data_from_readme, get_huggingface_model_info, get_huggingface_model_file_indicators
