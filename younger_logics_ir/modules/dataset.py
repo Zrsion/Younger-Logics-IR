@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2024-12-26 17:06:04
+# Last Modified time: 2024-12-26 17:13:48
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -27,7 +27,6 @@ from younger_logics_ir.modules.instance import Instance
 
 
 class Dataset(object):
-    _flags_filename = 'flags.json'
     _stamps_filename = 'stamps.json'
     _uniques_filename = 'uniques.json'
     _instances_dirname = 'instances'
@@ -39,7 +38,6 @@ class Dataset(object):
         instances = instances or list()
         version = version or str_to_sem('0.0.0')
 
-        self._flags: set[str] = set()
         self._stamps: set[Stamp] = set()
         self._uniques: list[str] = list()
         self._instances: dict[str, Instance] = dict()
@@ -229,10 +227,9 @@ class Dataset(object):
 
     def clean(self) -> None:
         """
-        Warn! This method will initialize all the properties of the dataset (including the flags, stamps, uniques, and instances).
+        Warn! This method will initialize all the properties of the dataset (including the stamps, uniques, and instances).
         """
 
-        self._flags: set[str] = set()
         self._stamps: set[Stamp] = set()
         self._uniques: list[str] = list()
         self._instances: dict[str, Instance] = dict()

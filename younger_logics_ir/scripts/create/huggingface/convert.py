@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2024-12-26 17:08:11
+# Last Modified time: 2024-12-26 17:15:42
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -202,7 +202,8 @@ def main(
     model_size_threshold: int | None = None,
     token: str | None = None,
 ):
-    model_ids: set[str] = set(load_json(model_ids_filepath))
+    hub = 'HuggingFace'
+    model_ids: set[str] = set([Origin() for model_id in load_json(model_ids_filepath)])
 
     assert framework in {'optimum', 'onnx', 'keras', 'tflite'}
     support_convert_method = dict(
@@ -229,11 +230,13 @@ def main(
 
     instances = Dataset.drain_instances(instances_dirpath)
 
-    with tqdm.tqdm(total=len(instances), desc='Checking Existing Instances') as progress_bar:
+    with tqdm.tqdm(total=len(instances), desc='Checking Existing Instance') as progress_bar:
         for index, instance in enumerate(instances, start=1):
             assert len(instance.labels) == 1
             implementation = instance.labels[0]
+            origin_id = str(implementation)
             if implementation.origin.hub == 'HuggingFace':
+                progress_bar.set_description(f'Checking Existing Instance - {instance.labels["model_name"]}')
                 logger.info(f' . Converted. Skip Total {index} - {instance.labels["model_name"]}')
                 model_ids = model_ids - {instance.labels['model_name']}
 
