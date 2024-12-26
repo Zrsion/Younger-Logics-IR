@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2024-12-26 14:24:10
+# Last Modified time: 2024-12-26 17:04:11
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -29,7 +29,7 @@ from huggingface_hub.utils._errors import RepositoryNotFoundError
 from younger.commons.io import load_json, create_dir, delete_dir, get_human_readable_size_representation
 from younger.commons.logging import logger
 
-from younger_logics_ir.modules import Instance, LogicX, Implementation, Origin, Benchmark, Evaluation
+from younger_logics_ir.modules import Dataset, Instance, LogicX, Implementation, Origin, Benchmark, Evaluation
 from younger_logics_ir.converters import convert
 
 from younger_logics_ir.dataset.utils import get_instance_dirname
@@ -211,7 +211,7 @@ def main(
         keras = convert_keras,
         tflite = convert_tflite,
     )
-    save_dirpath = save_dirpath.joinpath(f'Instances-HuggingFace-{framework.title()}')
+    instances_dirpath = save_dirpath.joinpath(f'Instances-HuggingFace-{framework.title()}')
 
     if token is not None:
         logger.info(f'-> HuggingFace Token Provided. Now Logging In ...')
@@ -221,15 +221,16 @@ def main(
 
     hf_file_system = HfFileSystem()
 
-    conversion_cache_dirpath = cache_dirpath.joinpath(f'ConversionCache-HuggingFace-{framework.title()}')
-    create_dir(conversion_cache_dirpath)
+    trf_cache_dirpath = cache_dirpath.joinpath(f'Cache-HFTrf-{framework.title()}')
+    create_dir(trf_cache_dirpath)
 
-    huggingface_cache_dirpath = cache_dirpath.joinpath('HuggingFaceCache')
-    create_dir(huggingface_cache_dirpath)
+    ofc_cache_dirpath = cache_dirpath.joinpath('Cache-HFOfc')
+    create_dir(ofc_cache_dirpath)
 
-    instance_dirpaths = list(save_dirpath.iterdir())
-    with tqdm.tqdm(total=len(instance_dirpaths), desc='Checking Existing Converted Instances') as progress_bar:
-        for index, instance_dirpath in enumerate(instance_dirpaths, start=1):
+    instances = Dataset.drain_instances(instances_dirpath)
+
+    with tqdm.tqdm(total=len(instances), desc='Checking Existing Instances') as progress_bar:
+        for index, instance in enumerate(instances, start=1):
             instance = Instance()
             instance.load(instance_dirpath)
             assert len(instance.labels) == 1

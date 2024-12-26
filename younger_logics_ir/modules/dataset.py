@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2024-12-26 16:52:23
+# Last Modified time: 2024-12-26 17:06:04
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -238,7 +238,7 @@ class Dataset(object):
         self._instances: dict[str, Instance] = dict()
 
     @classmethod
-    def drain_instances(cls, dataset_dirpath: pathlib.Path, strict: bool = False) -> list[Instance]:
+    def drain_instances(cls, instances_dirpath: pathlib.Path, strict: bool = False) -> list[Instance]:
         """
 
         :param dataset_dirpath: _description_
@@ -249,15 +249,16 @@ class Dataset(object):
         """
 
         instances = list()
-        logger.info(f' = [YL-IR] = Draining Instances @ {dataset_dirpath}...')
-        instance_dirpaths = sorted(dataset_dirpath.iterdir())
+        logger.info(f' = [YL-IR] = Draining Instances @ {instances_dirpath}...')
+        instance_dirpaths = sorted(instances_dirpath.iterdir())
         with tqdm.tqdm(total=len(instance_dirpaths), desc='Drain Instance') as progress_bar:
             for index, instance_dirpath in enumerate(instance_dirpaths, start=1):
-                progress_bar.set_description(f'Drain Instance: {instance_dirpath.name}')
                 instance = Instance()
                 try:
+                    progress_bar.set_description(f'Drain Instance[S]: {instance_dirpath.name}')
                     instance.load(instance_dirpath)
                 except Exception as exception:
+                    progress_bar.set_description(f'Drain Instance[F]: {instance_dirpath.name}')
                     if strict:
                         raise exception
                     else:
@@ -267,7 +268,7 @@ class Dataset(object):
         return
 
     @classmethod
-    def flush_instances(cls, instances: list[Instance], dataset_dirpath: pathlib.Path, strict: bool = False) -> None:
+    def flush_instances(cls, instances: list[Instance], instances_dirpath: pathlib.Path, strict: bool = False) -> None:
         """
 
         :param instances: _description_
@@ -276,15 +277,16 @@ class Dataset(object):
         :type dataset_dirpath: pathlib.Path
         """
 
-        logger.info(f' = [YL-IR] = Flushing Instances @ {dataset_dirpath}...')
+        logger.info(f' = [YL-IR] = Flushing Instances @ {instances_dirpath}...')
         with tqdm.tqdm(total=len(instances), desc='Flush Instance') as progress_bar:
             for index, instance in enumerate(instances, start=1):
                 instance_unique = instance.unique
-                progress_bar.set_description(f'Flush Instance: {instance_unique}')
-                instance_dirpath = dataset_dirpath.joinpath(f'{instance_unique}')
+                instance_dirpath = instances_dirpath.joinpath(f'{instance_unique}')
                 try:
+                    progress_bar.set_description(f'Flush Instance[S]: {instance_unique}')
                     instance.save(instance, instance_dirpath)
                 except Exception as exception:
+                    progress_bar.set_description(f'Flush Instance[F]: {instance_unique}')
                     if strict:
                         raise exception
                     else:
