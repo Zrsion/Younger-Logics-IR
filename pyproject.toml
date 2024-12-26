@@ -37,13 +37,12 @@ dependencies = [
     "tqdm",
     "click",
     "psutil",
-    "pandas",
     "networkx",
     "python-semantic-release"
 ]
 
 [project.optional-dependencies]
-scripts = ['onnx', 'huggingface_hub', 'torchvision', 'isocodes', 'yaml']
+scripts = ['onnx', 'huggingface_hub', 'torchvision', 'isocodes']
 
 construct = ["torch-geometric"]
 developer = [

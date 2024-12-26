@@ -17,12 +17,11 @@
 import os
 import json
 import tqdm
-import pandas
 import pathlib
 import multiprocessing
 
 from typing import Literal
-from huggingface_hub import login, list_metrics, HfFileSystem
+from huggingface_hub import login, HfFileSystem
 
 from younger.commons.io import load_json, save_json
 from younger.commons.logging import logger
@@ -97,16 +96,6 @@ def save_huggingface_model_ids(save_dirpath: pathlib.Path, library: str | None =
     logger.info(f'Total {len(model_ids)} Model IDs{f" (Library - {library})" if library else ""}. Results Saved In: \'{save_filepath}\'.')
 
 
-def save_huggingface_metrics(save_dirpath: pathlib.Path):
-    metrics = list_metrics()
-    ids = [metric.id for metric in metrics]
-    descriptions = [metric.description for metric in metrics]
-    data_frame = pandas.DataFrame({'Metric Names': ids, 'Descriptions': descriptions})
-    save_filepath = save_dirpath.joinpath('huggingface_metrics.xlsx')
-    data_frame.to_excel(save_filepath, index=False)
-    logger.info(f'Total {len(metrics)} Metrics. Results Saved In: \'{save_filepath}\'.')
-
-
 def save_huggingface_tasks(save_dirpath: pathlib.Path):
     tasks = get_huggingface_tasks()
     save_filepath = save_dirpath.joinpath('huggingface_tasks.json')
@@ -114,8 +103,8 @@ def save_huggingface_tasks(save_dirpath: pathlib.Path):
     logger.info(f'Total {len(tasks)} Tasks. Results Saved In: \'{save_filepath}\'.')
 
 
-def main(mode: Literal['Model_Infos', 'Model_IDs', 'Metrics', 'Tasks'], save_dirpath: pathlib.Path, mirror_url: str, **kwargs):
-    assert mode in {'Model_Infos', 'Model_IDs', 'Metrics', 'Tasks'}
+def main(mode: Literal['Model_Infos', 'Model_IDs', 'Tasks'], save_dirpath: pathlib.Path, mirror_url: str, **kwargs):
+    assert mode in {'Model_Infos', 'Model_IDs', 'Tasks'}
 
     os.environ['HF_ENDPOINT'] = 'https://huggingface.co/' if mirror_url == '' else mirror_url
 
@@ -125,10 +114,6 @@ def main(mode: Literal['Model_Infos', 'Model_IDs', 'Metrics', 'Tasks'], save_dir
 
     if mode == 'Model_IDs':
         save_huggingface_model_ids(save_dirpath, library=kwargs['library'], token=kwargs['token'])
-        return
-
-    if mode == 'Metrics':
-        save_huggingface_metrics(save_dirpath)
         return
 
     if mode == 'Tasks':

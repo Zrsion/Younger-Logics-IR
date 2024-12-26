@@ -17,8 +17,8 @@
 import click
 
 from younger_logics_ir.commands.create import create
-from younger_logics_ir.commands.update import update
-from younger_logics_ir.commands.output import output
+# from younger_logics_ir.commands.update import update
+# from younger_logics_ir.commands.output import output
 
 
 @click.group(name='younger-logics-ir')
@@ -27,8 +27,8 @@ def main():
 
 
 main.add_command(create, name='create')
-main.add_command(update, name='update')
-main.add_command(output, name='output')
+# main.add_command(update, name='update')
+# main.add_command(output, name='output')
 
 
 if __name__ == '__main__':
