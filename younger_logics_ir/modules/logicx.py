@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2024-12-23 11:07:12
+# Last Modified time: 2024-12-26 10:57:31
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -19,7 +19,7 @@ import networkx
 
 from typing import Literal, Generator
 
-from younger.commons.io import load_pickle, save_pickle, loads_pickle, saves_pickle, loads_json, saves_json
+from younger.commons.io import load_pickle, save_pickle, loads_pickle, saves_pickle, loads_json, saves_json, get_object_with_sorted_dict
 from younger.commons.hash import hash_string
 
 
@@ -90,12 +90,15 @@ class LogicX(object):
 
         Format - {node_type: str, node_attr: dict}
         """
+        assert self.valid, f'\"LogicX\" is invalid!'
         return self._dag.nodes[node_index]
 
     def node_type_feature(self, node_index: str) -> str:
+        assert self.valid, f'\"LogicX\" is invalid!'
         return self._dag.nodes[node_index]['node_type']
 
     def node_attr_feature(self, node_index: str) -> dict:
+        assert self.valid, f'\"LogicX\" is invalid!'
         return self._dag.nodes[node_index]['node_attr']
 
     def node_indices(self, node_type: Literal['input', 'output', 'operator', 'outer']) -> Generator[str, None, None]:
@@ -137,7 +140,6 @@ class LogicX(object):
         dag = networkx.DiGraph()
 
         dag.graph = data.get("graph", dict())
-        networkx.json_graph.node_link_graph
         for node_data in data['nodes']:
             node_index = node_data['node_index']
             node_features = node_data['node_features']
@@ -152,25 +154,17 @@ class LogicX(object):
 
     @classmethod
     def saves_dag(cls, dag: networkx.DiGraph) -> str:
-        def get_object_with_sorted_containers(object):
-            if isinstance(object, dict):
-                return {key: get_object_with_sorted_containers(value) for key, value in sorted(object.items())}
-            elif isinstance(object, list):
-                return [get_object_with_sorted_containers(item) for item in object]
-            else:
-                return object
-
         data = dict(
             graph=dag.graph,
             nodes=[
                 dict(
-                    node_features=get_object_with_sorted_containers(node_features),
+                    node_features=get_object_with_sorted_dict(node_features),
                     node_index=node_index,
                 ) for node_index, node_features in sorted(dag.nodes(data=True), key=lambda x: x[0])
             ],
             edges=[
                 dict(
-                    edge_features=get_object_with_sorted_containers(edge_features),
+                    edge_features=get_object_with_sorted_dict(edge_features),
                     tail_index=tail_index,
                     head_index=head_index,
                 ) for tail_index, head_index, edge_features in sorted(dag.edges(data=True), key=lambda x: (x[0], x[1]))
@@ -232,9 +226,9 @@ class LogicX(object):
         return networkx.weisfeiler_lehman_graph_hash(logicx.dag, edge_attr=None, node_attr='node_tuid', iterations=3, digest_size=16)
 
     @classmethod
-    def uuid(cls, logicx: 'LogicX') -> str:
+    def luid(cls, logicx: 'LogicX') -> str:
         """
-        LogicX Object Hash (UUID)
+        LogicX Unique ID (LUID)
 
         :param logicx: _description_
         :type logicx: LogicX

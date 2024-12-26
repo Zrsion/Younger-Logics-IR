@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2024-12-25 14:37:18
+# Last Modified time: 2024-12-26 11:21:17
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -17,6 +17,7 @@
 import pathlib
 
 from younger.commons.io import load_json, save_json
+from younger.commons.hash import hash_string
 from younger.commons.version import semantic_release, str_to_sem
 
 from younger_logics_ir.modules.meta import Meta
@@ -33,26 +34,57 @@ class Instance(object):
         self._meta: Meta = Meta(fresh_checker=self.fresh_checker)
         self._logicx: LogicX = LogicX()
         self._labels: list[Implementation] = list()
-        self._unique = None
+
+    def __hash__(self):
+        return hash((self.logicx_part_unique, self.labels_part_unique))
 
     @property
     def meta(self) -> Meta:
         return self._meta
 
     @property
+    def valid(self) -> bool:
+        return self.logicx_valid and self.labels_valid
+
+    @property
+    def unique(self) -> str | None:
+        if self.valid:
+            return hash_string(self.logicx_part_unique + self.labels_part_unique)
+        else:
+            return None
+
+    @property
     def logicx(self) -> LogicX:
         return self._logicx
+
+    @property
+    def logicx_valid(self) -> bool:
+        return self._logicx.valid
+
+    @property
+    def logicx_part_unique(self) -> str | None:
+        if self.logicx_valid:
+            return LogicX.luid(self._logicx)
+        else:
+            return None
 
     @property
     def labels(self) -> list[Implementation]:
         return self._labels
 
     @property
-    def unique(self) -> str:
-        return self._unique
+    def labels_valid(self) -> bool:
+        return len(self._labels) != 0
+
+    @property
+    def labels_part_unique(self) -> str | None:
+        if self.labels_valid:
+            return '-IUID-'.join([Implementation.iuid(label) for label in self._labels])
+        else:
+            return None
 
     def fresh_checker(self) -> bool:
-        return self._unique == ''
+        return self.unique is None
 
     def load(self, instance_dirpath: pathlib.Path) -> None:
         assert instance_dirpath.is_dir(), f'There is no \"Instance\" can be loaded from the specified directory \"{instance_dirpath.absolute()}\".'
@@ -62,8 +94,6 @@ class Instance(object):
         self._load_logicx(logicx_filepath)
         labels_filepath = instance_dirpath.joinpath(self.__class__._labels_filename)
         self._load_labels(labels_filepath)
-        unique_filepath = instance_dirpath.joinpath(self.__class__._unique_filename)
-        self._load_unique(unique_filepath)
         return
 
     def save(self, instance_dirpath: pathlib.Path) -> None:
@@ -74,8 +104,6 @@ class Instance(object):
         self._save_logicx(logicx_filepath)
         labels_filepath = instance_dirpath.joinpath(self.__class__._labels_filename)
         self._save_labels(labels_filepath)
-        unique_filepath = instance_dirpath.joinpath(self.__class__._unique_filename)
-        self._save_unique(unique_filepath)
         return
 
     def _load_meta(self, meta_filepath: pathlib.Path) -> None:
@@ -108,25 +136,14 @@ class Instance(object):
         save_json([Implementation.saves(l) for l in self._labels], labels_filepath)
         return
 
-    def _load_unique(self, unique_filepath: pathlib.Path) -> None:
-        assert unique_filepath.is_file(), f'There is no \"Unique ID\" can be loaded from the specified path \"{unique_filepath.absolute()}\".'
-        self._unique = load_json(unique_filepath)
-        return
-
-    def _save_unique(self, unique_filepath: pathlib.Path) -> None:
-        assert not unique_filepath.is_file(), f'\"Unique ID\" can not be saved into the specified path \"{unique_filepath.absolute()}\".'
-        save_json(self._unique, unique_filepath)
-        return
-
     def setup_logicx(self, logicx: LogicX) -> None:
         assert isinstance(logicx, LogicX), f'Argument \"logicx\" must be LogicX instead \"{type(logicx)}\"!'
         assert logicx.valid, f'Argument \"logicx\" must be valid!'
         if self.meta.is_fresh:
             self._logicx = logicx
-            self._unique = LogicX.uuid(self._logicx)
         return
 
-    def insert_label(self, label: Label) -> None:
+    def insert_label(self, label: Implementation) -> None:
         if self.meta.is_fresh:
             if label in self._labels:
                 pass
@@ -134,7 +151,7 @@ class Instance(object):
                 self._labels.append(label)
         return
 
-    def delete_label(self, label: Label) -> None:
+    def delete_label(self, label: Implementation) -> None:
         if self.meta.is_fresh:
             if label in self._labels:
                 self._labels.remove(label)

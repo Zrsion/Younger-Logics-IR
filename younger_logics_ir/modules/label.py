@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2024-12-25 14:51:33
+# Last Modified time: 2024-12-26 10:58:41
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -16,7 +16,8 @@
 
 from typing import Any
 
-from younger.commons.io import loads_json, saves_json
+from younger.commons.io import loads_json, saves_json, get_object_with_sorted_dict
+from younger.commons.hash import hash_string
 
 
 class Origin(object):
@@ -289,13 +290,13 @@ class Implementation(object):
             Origin.load_dict(d['origin']),
             d['like'],
             d['download'],
-            {
+            get_object_with_sorted_dict({
                 Benchmark.load_dict(benchmark): {
                     Evaluation.load_dict(evaluation): performance
                     for evaluation, performance in evaluation2performance.items()
                 }
                 for benchmark, evaluation2performance in d['performances'].items() # {benchmark: {evaluation: performance}}
-            }
+            })
         )
         return i
 
@@ -305,13 +306,13 @@ class Implementation(object):
             origin=Origin.save_dict(i._origin),
             like=i._like,
             download=i._download,
-            performances={
+            performances=get_object_with_sorted_dict({
                 Benchmark.saves(benchmark): {
                     Evaluation.saves(evaluation): performance
                     for evaluation, performance in evaluation2performance.items()
                 }
                 for benchmark, evaluation2performance in i._performances.items()
-            }
+            })
         )
         return d
 
@@ -326,6 +327,37 @@ class Implementation(object):
         d = cls.save_dict(i)
         t = saves_json(d)
         return t
+
+    @classmethod
+    def hash(cls, implementation: 'Implementation') -> str:
+        """
+        Implementation Hash (Hash)
+        Only the Origin is used to calculate the hash of the Implementation.
+        Because an Implementation is uniquely identified by its Origin.
+
+        .. note::
+            This classmethod is different from the __hash__ method of the Implementation class which returns the int type hash value of the Implementation object for the convinent of quickly checking the equality of two Implementation objects.
+
+        :param implementation: _description_
+        :type implementation: Implementation
+
+        :return: _description_
+        :rtype: str
+        """
+        return hash_string(Origin.saves(implementation.origin))
+
+    @classmethod
+    def iuid(cls, implementation: 'Implementation') -> str:
+        """
+        Implementation Unique ID (IUID)
+
+        :param implementation: _description_
+        :type implementation: Implementation
+
+        :return: _description_
+        :rtype: str
+        """
+        return hash_string(cls.saves(implementation))
 
     def search_performance(self, benchmark: Benchmark, evaluation: Evaluation) -> Any:
         return self._performances.get(benchmark, dict()).get(evaluation, None)
