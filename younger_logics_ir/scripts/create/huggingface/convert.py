@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2024-12-26 17:04:11
+# Last Modified time: 2024-12-26 17:08:11
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -231,8 +231,6 @@ def main(
 
     with tqdm.tqdm(total=len(instances), desc='Checking Existing Instances') as progress_bar:
         for index, instance in enumerate(instances, start=1):
-            instance = Instance()
-            instance.load(instance_dirpath)
             assert len(instance.labels) == 1
             implementation = instance.labels[0]
             if implementation.origin.hub == 'HuggingFace':
