@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2024-12-24 15:33:30
+# Last Modified time: 2024-12-26 16:52:23
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -27,6 +27,7 @@ from younger_logics_ir.modules.instance import Instance
 
 
 class Dataset(object):
+    _flags_filename = 'flags.json'
     _stamps_filename = 'stamps.json'
     _uniques_filename = 'uniques.json'
     _instances_dirname = 'instances'
@@ -38,6 +39,7 @@ class Dataset(object):
         instances = instances or list()
         version = version or str_to_sem('0.0.0')
 
+        self._flags: set[str] = set()
         self._stamps: set[Stamp] = set()
         self._uniques: list[str] = list()
         self._instances: dict[str, Instance] = dict()
@@ -123,9 +125,9 @@ class Dataset(object):
         assert instances_dirpath.is_dir(), f'There is no \"Instance\"s can be loaded from the specified directory \"{instances_dirpath.absolute()}\".'
         logger.info(f' = [YL-IR] = Loading Instances ...')
         with tqdm.tqdm(total=len(self._uniques), desc='Load Instance') as progress_bar:
-            for index, unique in enumerate(self._uniques):
-                logger.info(f' = [YL-IR] = No.{index} Instance: {unique}')
-                instance_dirpath = instances_dirpath.joinpath(f'{index}-{unique}')
+            for index, unique in enumerate(self._uniques, start=1):
+                progress_bar.set_description(f'Load Instance: {unique}')
+                instance_dirpath = instances_dirpath.joinpath(f'{unique}')
                 self._instances[unique] = Instance()
                 self._instances[unique].load(instance_dirpath)
                 progress_bar.update(1)
@@ -135,33 +137,15 @@ class Dataset(object):
         assert not instances_dirpath.is_dir(), f'\"Instance\"s can not be saved into the specified directory \"{instances_dirpath.absolute()}\".'
         logger.info(f' = [YL-IR] = Saving Instances ...')
         with tqdm.tqdm(total=len(self._uniques), desc='Save Instance') as progress_bar:
-            for index, unique in enumerate(self._uniques):
-                logger.info(f' = [YL-IR] = No.{index+1} Instance: {unique}')
-                instance_dirpath = instances_dirpath.joinpath(f'{index}-{unique}')
+            for index, unique in enumerate(self._uniques, start=1):
+                progress_bar.set_description(f'Save Instance: {unique}')
+                instance_dirpath = instances_dirpath.joinpath(f'{unique}')
                 instance = self._instances[unique]
                 instance.save(instance_dirpath)
                 progress_bar.update(1)
         return
 
-    def acquire(self, version: semantic_release.Version) -> 'Dataset':
-        logger.info(f' = [YL-IR] = Acquiring Dataset: version = {version}...')
-        dataset = Dataset()
-        for index, unique in enumerate(self._uniques):
-            instance = self._instances[unique]
-            if (instance.meta.release and instance.meta.release_version <= version) and (not instance.meta.retired or version < instance.meta.retired_version):
-                logger.info(f' = [YL-IR] = Acquired No.{index+1} Instance: {unique}')
-                dataset.insert(instance)
-        dataset.release(version=version)
-        return dataset
-
-    def check(self) -> None:
-        assert len(self._uniques) == len(self._instances), f'The number of \"Instance\"s does not match the number of \"Unique\"s.'
-        for unique in self._uniques:
-            instance = self._instances[unique]
-            assert unique == instance.unique, f'The \"Unique={instance.unique}\" of \"Instance\" does not match \"Unique={unique}\" '
-        return
-
-    def insert(self, instance: Instance) -> bool:
+    def insert_instance(self, instance: Instance) -> bool:
         # Insert only instances that do not belong to any dataset.
         assert isinstance(instance, Instance), f'Argument \"instance\"must be an \"Instance\" instead \"{type(instance)}\"!'
         if instance.unique is None:
@@ -173,7 +157,7 @@ class Dataset(object):
                 self._instances[instance.unique] = instance
                 return self._instances[instance.unique].insert()
 
-    def delete(self, instance: Instance) -> bool:
+    def delete_instance(self, instance: Instance) -> bool:
         # Delete only the instances within the dataset.
         assert isinstance(instance, Instance), f'Argument \"instance\"must be an \"Instance\" instead \"{type(instance)}\"!'
         if instance.unique is None:
@@ -188,13 +172,13 @@ class Dataset(object):
     def insert_instances(self, instances: list[Instance]) -> int:
         flags = list()
         for instance in instances:
-            flags.append(self.insert(instance))
+            flags.append(self.insert_instance(instance))
         return sum(flags)
 
     def delete_instances(self, instances: list[Instance]) -> int:
         flags = list()
         for instance in instances:
-            flags.append(self.delete(instance))
+            flags.append(self.delete_instance(instance))
         return sum(flags)
 
     def release(self, version: semantic_release.Version) -> None:
@@ -222,4 +206,89 @@ class Dataset(object):
             return
         else:
             self._stamps.add(stamp)
+        return
+
+    def acquire(self, version: semantic_release.Version) -> 'Dataset':
+        logger.info(f' = [YL-IR] = Acquiring Dataset: version = {version}...')
+        dataset = Dataset()
+        with tqdm.tqdm(total=len(self._uniques), desc='Acquire Instance') as progress_bar:
+            for index, unique in enumerate(self._uniques, start=1):
+                instance = self._instances[unique]
+                if (instance.meta.release and instance.meta.release_version <= version) and (not instance.meta.retired or version < instance.meta.retired_version):
+                    progress_bar.set
+                    dataset.insert_instance(instance)
+        dataset.release(version=version)
+        return dataset
+
+    def check(self) -> None:
+        assert len(self._uniques) == len(self._instances), f'The number of \"Instance\"s does not match the number of \"Unique\"s.'
+        for unique in self._uniques:
+            instance = self._instances[unique]
+            assert unique == instance.unique, f'The \"Unique={instance.unique}\" of \"Instance\" does not match \"Unique={unique}\" '
+        return
+
+    def clean(self) -> None:
+        """
+        Warn! This method will initialize all the properties of the dataset (including the flags, stamps, uniques, and instances).
+        """
+
+        self._flags: set[str] = set()
+        self._stamps: set[Stamp] = set()
+        self._uniques: list[str] = list()
+        self._instances: dict[str, Instance] = dict()
+
+    @classmethod
+    def drain_instances(cls, dataset_dirpath: pathlib.Path, strict: bool = False) -> list[Instance]:
+        """
+
+        :param dataset_dirpath: _description_
+        :type dataset_dirpath: pathlib.Path
+
+        :return: _description_
+        :rtype: list[Instance]
+        """
+
+        instances = list()
+        logger.info(f' = [YL-IR] = Draining Instances @ {dataset_dirpath}...')
+        instance_dirpaths = sorted(dataset_dirpath.iterdir())
+        with tqdm.tqdm(total=len(instance_dirpaths), desc='Drain Instance') as progress_bar:
+            for index, instance_dirpath in enumerate(instance_dirpaths, start=1):
+                progress_bar.set_description(f'Drain Instance: {instance_dirpath.name}')
+                instance = Instance()
+                try:
+                    instance.load(instance_dirpath)
+                except Exception as exception:
+                    if strict:
+                        raise exception
+                    else:
+                        continue
+                instances.append(instance)
+                progress_bar.update(1)
+        return
+
+    @classmethod
+    def flush_instances(cls, instances: list[Instance], dataset_dirpath: pathlib.Path, strict: bool = False) -> None:
+        """
+
+        :param instances: _description_
+        :type instances: list[Instance]
+        :param dataset_dirpath: _description_
+        :type dataset_dirpath: pathlib.Path
+        """
+
+        logger.info(f' = [YL-IR] = Flushing Instances @ {dataset_dirpath}...')
+        with tqdm.tqdm(total=len(instances), desc='Flush Instance') as progress_bar:
+            for index, instance in enumerate(instances, start=1):
+                instance_unique = instance.unique
+                progress_bar.set_description(f'Flush Instance: {instance_unique}')
+                instance_dirpath = dataset_dirpath.joinpath(f'{instance_unique}')
+                try:
+                    instance.save(instance, instance_dirpath)
+                except Exception as exception:
+                    if strict:
+                        raise exception
+                    else:
+                        continue
+
+                progress_bar.update(1)
         return
