@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2024-12-13 15:40:23
+# Last Modified time: 2024-12-27 16:49:20
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -23,6 +23,7 @@ from huggingface_hub import ModelCardData
 from younger.commons.logging import logger
 
 from younger_logics_ir.scripts.commons.detectors import detect_task, detect_dataset_name, detect_dataset_split, detect_metric_name, normalize_metric_value
+
 
 
 def get_detailed_string(strings: list[str]) -> str:
@@ -336,3 +337,49 @@ def get_heuristic_annotations(model_id: str, model_card_data: ModelCardData) -> 
 
 def get_manually_annotations():
     pass
+
+
+
+def filter_readme_filepaths(filepaths: list[str]) -> list[str]:
+    readme_filepaths = list()
+    pattern = re.compile(r'.*readme(?:\.[^/\\]*)?$', re.IGNORECASE)
+    for filepath in filepaths:
+        if re.match(pattern, filepath) is not None:
+            readme_filepaths.append(filepath)
+
+    return readme_filepaths
+
+def extract_possible_metrics_from_readme(readme: str) -> dict[str, list[str] | list[dict[str, list[str]]]]:
+    possible_metrics: dict[str, list[str] | list[dict[str, list[str]]]] = dict()
+
+    card_related = dict()
+
+    card_data = get_huggingface_model_card_data_from_readme(readme)
+
+    card_related['datasets'] = card_data.datasets if card_data.datasets else list()
+    card_related['metrics'] = card_data.metrics if card_data.metrics else list()
+
+    results = list()
+    if card_data.eval_results:
+        for eval_result in card_data.eval_results:
+            result = dict(
+                task_type=eval_result.task_type,
+                dataset_type=eval_result.dataset_type,
+                dataset_config=eval_result.dataset_config if eval_result.dataset_config else '',
+                dataset_split=eval_result.dataset_split if eval_result.dataset_split else '',
+                metric_type=eval_result.metric_type,
+                metric_value=str(eval_result.metric_value),
+                metric_config=eval_result.metric_config if eval_result.metric_config else '',
+            )
+            results.append(result)
+    card_related['results'] = results
+
+    possible_metrics['table_related'] = extract_possible_table_related_metrics_from_readme(readme)
+
+    readme = re.sub(README_TABLE_Pattern, '', readme)
+    readme = re.sub(README_DATE_Pattern, '', readme)
+    readme = re.sub(README_DATETIME_Pattern, '', readme)
+
+    possible_metrics['digit_related'] = extract_possible_digit_related_metrics_from_readme(readme)
+    
+    return possible_metrics

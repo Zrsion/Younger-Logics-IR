@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2024-12-13 14:28:53
+# Last Modified time: 2024-12-27 14:11:53
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -26,11 +26,7 @@ from huggingface_hub import login, HfFileSystem
 from younger.commons.io import load_json, save_json
 from younger.commons.logging import logger
 
-from younger_logics_ir.scripts.commons.huggingface_utils import get_huggingface_model_infos, get_huggingface_model_ids, get_huggingface_tasks, check_huggingface_model_eval_results
-
-
-def get_huggingface_model_label_status(model_id: str) -> tuple[str, bool]:
-    return (model_id, check_huggingface_model_eval_results(model_id, HfFileSystem()))
+from younger_logics_ir.scripts.commons.huggingface_utils import get_huggingface_model_infos, get_huggingface_model_ids, get_huggingface_task_infos, get_huggingface_task_ids
 
 
 def save_huggingface_model_infos(save_dirpath: pathlib.Path, library: str | None = None, token: str | None = None, force_reload: bool | None = None, worker_number: int = 10):
@@ -49,6 +45,7 @@ def save_huggingface_model_infos(save_dirpath: pathlib.Path, library: str | None
         logger.info(f' ^ Saved.')
 
     logger.info(f' -> Begin Retrieve Label')
+    # Model Infos With Label Status
     json_miwls_suffix = f'_{library}-with_label_status.json' if library else '-with_label_status.json'
     json_miwls_save_filepath = save_dirpath.joinpath(f'model_ids{json_miwls_suffix}')
     temp_miwls_suffix = f'_{library}-with_label_status.temp' if library else '-with_label_status.temp'
@@ -88,34 +85,44 @@ def save_huggingface_model_infos(save_dirpath: pathlib.Path, library: str | None
     logger.info(f' => Finished')
 
 
-def save_huggingface_model_ids(save_dirpath: pathlib.Path, library: str | None = None, token: str | None = None):
+def save_huggingface_model_ids(save_dirpath: pathlib.Path, library: str | None = None, token: str | None = None) -> None:
     model_ids = list(get_huggingface_model_ids(library, token=token))
-    suffix = f'_{library}.json' if library else '.json'
-    save_filepath = save_dirpath.joinpath(f'model_ids{suffix}')
+    save_filepath = save_dirpath.joinpath(f'model_ids{f"_{library}.json" if library else ".json"}')
     save_json(model_ids, save_filepath, indent=2)
     logger.info(f'Total {len(model_ids)} Model IDs{f" (Library - {library})" if library else ""}. Results Saved In: \'{save_filepath}\'.')
 
 
-def save_huggingface_tasks(save_dirpath: pathlib.Path):
-    tasks = get_huggingface_tasks()
+def save_huggingface_task_infos(save_dirpath: pathlib.Path, token: str | None = None) -> None:
+    task_infos = get_huggingface_task_infos()
     save_filepath = save_dirpath.joinpath('huggingface_tasks.json')
-    save_json(tasks, save_filepath, indent=2)
-    logger.info(f'Total {len(tasks)} Tasks. Results Saved In: \'{save_filepath}\'.')
+    save_json(task_infos, save_filepath, indent=2)
+    logger.info(f'Total {len(task_infos)} Tasks. Results Saved In: \'{save_filepath}\'.')
 
 
-def main(mode: Literal['Model_Infos', 'Model_IDs', 'Tasks'], save_dirpath: pathlib.Path, mirror_url: str, **kwargs):
-    assert mode in {'Model_Infos', 'Model_IDs', 'Tasks'}
+def save_huggingface_task_ids(save_dirpath: pathlib.Path, token: str | None = None) -> None:
+    task_ids = get_huggingface_task_ids()
+    save_filepath = save_dirpath.joinpath('huggingface_tasks.json')
+    save_json(task_ids, save_filepath, indent=2)
+    logger.info(f'Total {len(task_ids)} Tasks. Results Saved In: \'{save_filepath}\'.')
+
+
+def main(mode: Literal['Model_Infos', 'Model_IDs', 'Task_Infos', 'Task_IDs'], save_dirpath: pathlib.Path, mirror_url: str, **kwargs) -> None:
+    assert mode in {'Model_Infos', 'Model_IDs', 'Task_Infos', 'Task_IDs'}
 
     os.environ['HF_ENDPOINT'] = 'https://huggingface.co/' if mirror_url == '' else mirror_url
 
     if mode == 'Model_Infos':
-        save_huggingface_model_infos(save_dirpath, library=kwargs['library'], token=kwargs['token'], force_reload=kwargs['force_reload'], worker_number=kwargs['worker_number'])
+        save_huggingface_model_infos(save_dirpath, token=kwargs['token'], force_reload=kwargs['force_reload'], worker_number=kwargs['worker_number'])
         return
 
     if mode == 'Model_IDs':
-        save_huggingface_model_ids(save_dirpath, library=kwargs['library'], token=kwargs['token'])
+        save_huggingface_model_ids(save_dirpath, token=kwargs['token'])
         return
 
-    if mode == 'Tasks':
-        save_huggingface_tasks(save_dirpath)
+    if mode == 'Task_Infos':
+        save_huggingface_task_infos(save_dirpath, token=kwargs['token'])
+        return
+
+    if mode == 'Task_IDs':
+        save_huggingface_task_ids(save_dirpath, token=kwargs['token'])
         return

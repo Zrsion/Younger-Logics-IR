@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2024-12-26 17:15:42
+# Last Modified time: 2024-12-27 16:49:41
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -202,8 +202,37 @@ def main(
     model_size_threshold: int | None = None,
     token: str | None = None,
 ):
+    """
+    Retrieve Metadata of HuggingFace Models and Save Them Into Files.
+
+    :param model_ids_filepath: _description_
+    :type model_ids_filepath: pathlib.Path
+    :param save_dirpath: _description_
+    :type save_dirpath: pathlib.Path
+    :param cache_dirpath: _description_
+    :type cache_dirpath: pathlib.Path
+    :param status_filepath: _description_, defaults to None
+    :type status_filepath: pathlib.Path | None, optional
+    :param device: _description_, defaults to 'cpu'
+    :type device: Literal[&#39;cpu&#39;, &#39;cuda&#39;], optional
+    :param framework: _description_, defaults to 'optimum'
+    :type framework: Literal[&#39;optimum&#39;, &#39;onnx&#39;, &#39;keras&#39;, &#39;tflite&#39;], optional
+    :param model_size_threshold: _description_, defaults to None
+    :type model_size_threshold: int | None, optional
+    :param token: _description_, defaults to None
+    :type token: str | None, optional
+
+    In this project we have a concept called Origin. Origin is a tuple of (hub, owner, name).
+
+    HuggingFace Hub is a place where people can share their models, datasets, and scripts.
+    This project hardcodes the hub as 'HuggingFace'.
+    The Naming Convention of the Mdoel ID on HuggingFace Hub follows the format: {owner}/{name}.
+    Thus the Origin of a Implementation, often called as Model which is a instance of a LogicX a.k.a. Neural Network Architecture (NNA), on HuggingFace Hub is Origin('HuggingFace', owner, name).
+
+    """
+
     hub = 'HuggingFace'
-    model_ids: set[str] = set([Origin() for model_id in load_json(model_ids_filepath)])
+    model_ids: set[str] = set([Origin.loads(origin) for model_id in load_json(model_ids_filepath)])
 
     assert framework in {'optimum', 'onnx', 'keras', 'tflite'}
     support_convert_method = dict(
