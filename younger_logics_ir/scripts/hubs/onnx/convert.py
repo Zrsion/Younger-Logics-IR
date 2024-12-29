@@ -25,7 +25,7 @@ from younger.commons.io import load_json, create_dir, delete_dir
 from younger.commons.logging import logger
 
 from younger_logics_ir.dataset.utils import get_instance_dirname
-from younger_logics_ir.scripts.commons.onnx_utils import get_onnx_model_info
+from younger.logics.ir.younger_logics_ir.scripts.hubs.onnx.onnx_utils import get_onnx_model_info
 
 
 def save_status(status_filepath: pathlib.Path, status: dict[str, str]):

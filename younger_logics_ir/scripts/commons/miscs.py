@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2024-12-13 15:14:36
+# Last Modified time: 2024-12-29 12:54:07
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -28,7 +28,7 @@ from younger.commons.io import get_path_size
 from younger.commons.logging import logger
 
 
-def tf2onnx_main_export(model_path: pathlib.Path, output_path: pathlib.Path, model_type: Literal['saved_model', 'keras', 'tflite', 'tfjs'] = 'saved_model'):
+def tf2onnx_main_export(model_path: pathlib.Path, output_path: pathlib.Path, opset: int, model_type: Literal['saved_model', 'keras', 'tflite', 'tfjs'] = 'saved_model'):
     # [NOTE] The Code are modified based on the official tensorflow-onnx source codes. (https://github.com/onnx/tensorflow-onnx/blob/main/tf2onnx/convert.py [Method: main])
     assert model_type in {'saved_model', 'keras', 'tflite', 'tfjs'}
 
@@ -71,7 +71,8 @@ def tf2onnx_main_export(model_path: pathlib.Path, output_path: pathlib.Path, mod
                 input_names=inputs,
                 output_names=outputs,
                 tflite_path=tflite_filepath,
-                tfjs_path=tfjs_filepath
+                tfjs_path=tfjs_filepath,
+                opset=opset
             )
             onnx_graph = optimizer.optimize_graph(graph, catch_errors=True)
             model_proto = onnx_graph.make_model(f'converted from {model_name}', external_tensor_storage=external_tensor_storage)

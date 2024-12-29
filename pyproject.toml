@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
 include = ["younger_logics_ir"]
-exclude = ["test"]
+exclude = ["test", "younger_logics_ir/scripts/commons/hubs/huggingface/third_parties"]
 
 [project]
 name = "Younger-Logics-IR"

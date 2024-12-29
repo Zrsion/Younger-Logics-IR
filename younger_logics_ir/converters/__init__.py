@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2024-12-17 10:20:36
+# Last Modified time: 2024-12-29 14:26:33
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -22,7 +22,7 @@ from .core2ir import convert_core_to_ir
 from younger_logics_ir.modules import LogicX
 
 
-def convert(model_handler: onnx.ModelProto | str) -> None:
+def convert(model_handler: onnx.ModelProto | str) -> LogicX:
     """
     :param model: The `model` parameter accepts a static description type of the model logic.
         It accepts the following types:

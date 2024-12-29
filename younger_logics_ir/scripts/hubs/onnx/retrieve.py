@@ -21,7 +21,7 @@ from typing import Literal
 from younger.commons.io import load_json, save_json
 from younger.commons.logging import logger
 
-from younger_logics_ir.scripts.commons.onnx_utils import get_onnx_model_infos, get_onnx_model_ids
+from younger.logics.ir.younger_logics_ir.scripts.hubs.onnx.onnx_utils import get_onnx_model_infos, get_onnx_model_ids
 
 
 def save_onnx_model_infos(save_dirpath: pathlib.Path, force_reload: bool | None = None):
