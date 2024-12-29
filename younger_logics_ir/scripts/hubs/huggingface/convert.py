@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2024-12-29 17:38:20
+# Last Modified time: 2024-12-29 20:31:15
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -35,7 +35,7 @@ from younger_logics_ir.commons.constants import YLIROriginHub
 
 from younger_logics_ir.scripts.commons.utils import get_onnx_opset_versions, get_onnx_model_opset_version
 
-from younger_logics_ir.scripts.hubs.huggingface.utils import get_huggingface_hub_model_storage, get_huggingface_hub_model_siblings, clean_huggingface_hub_model_cache
+from .utils import get_huggingface_hub_model_storage, get_huggingface_hub_model_siblings, clean_huggingface_hub_model_cache
 
 
 def clean_cache(model_id: str, cvt_cache_dirpath: pathlib.Path, ofc_cache_dirpath: pathlib.Path):
@@ -371,7 +371,7 @@ def main(
     sts_cache_dirpath = cache_dirpath.joinpath(f'Cache-HFSts')
     convert_status, last_handled_model_id = get_convert_status_and_last_handled_model_id(sts_cache_dirpath, framework)
     number_of_converted_models = len(convert_status)
-    logger.info(f'-> Converted Models: {number_of_converted_models}')
+    logger.info(f'-> Previous Converted Models: {number_of_converted_models}')
 
     if model_size_threshold is None:
         logger.info(f'   Model Size Threshold: No Limit.')

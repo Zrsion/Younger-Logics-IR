@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2024-12-28 18:27:34
+# Last Modified time: 2024-12-29 20:06:37
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -22,7 +22,7 @@ from typing import Literal
 from younger.commons.io import save_json
 from younger.commons.logging import logger
 
-from younger_logics_ir.scripts.hubs.huggingface.utils import get_huggingface_hub_model_infos, get_huggingface_hub_model_ids, get_huggingface_hub_metric_infos, get_huggingface_hub_metric_ids, get_huggingface_hub_task_infos, get_huggingface_hub_task_ids
+from .utils import get_huggingface_hub_model_infos, get_huggingface_hub_model_ids, get_huggingface_hub_metric_infos, get_huggingface_hub_metric_ids, get_huggingface_hub_task_infos, get_huggingface_hub_task_ids
 
 
 def save_huggingface_model_infos(save_dirpath: pathlib.Path, token: str | None = None, number_per_file: int | None = None):

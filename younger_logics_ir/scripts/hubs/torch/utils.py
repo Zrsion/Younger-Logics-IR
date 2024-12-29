@@ -16,7 +16,16 @@ import torchvision
 from typing import Any
 
 
-def get_torchvision_model_infos() -> list[dict[str, Any]]:
+"""
+Now This Module Only Support Torch Vision
+
+.. todo::
+    Crawl github repos which contains hubconf.py file to load model by using torch.hub.load().
+    See: https://pytorch.org/hub/ and https://pytorch.org/docs/stable/hub.html
+"""
+
+
+def get_torch_hub_model_infos() -> list[dict[str, Any]]:
     model_infos = list()
     for model_id in torchvision.models.list_models():
         model_infos.append(
@@ -29,7 +38,7 @@ def get_torchvision_model_infos() -> list[dict[str, Any]]:
     return model_infos
 
 
-def get_torchvision_model_info(model_id: str) -> dict[str, Any]:
+def get_torch_hub_model_info(model_id: str) -> dict[str, Any]:
     model_info = dict(
         id = model_id,
         weights = {weights_enum.name: weights_enum.url for weights_enum in torchvision.models.get_model_weights(model_id)},
@@ -38,13 +47,13 @@ def get_torchvision_model_info(model_id: str) -> dict[str, Any]:
     return model_info
 
 
-def get_torchvision_model_ids() -> list[str]:
-    model_infos = get_torchvision_model_infos()
+def get_torch_hub_model_ids() -> list[str]:
+    model_infos = get_torch_hub_model_infos()
     model_ids = [model_info['id'] for model_info in model_infos]
     return model_ids
 
 
-def get_torchvision_model_types() -> dict[str, str]:
+def get_torch_hub_model_types() -> dict[str, str]:
     known_model_types = {
         'torchvision.models': 'classification',
         'torchvision.models.segmentation': 'segmentation',
@@ -54,10 +63,10 @@ def get_torchvision_model_types() -> dict[str, str]:
         'torchvision.models.optical_flow': 'optical_flow',
     }
     model_types: dict[str, str] = dict()
-    model_ids = get_torchvision_model_ids()
+    model_ids = get_torch_hub_model_ids()
     model_modules: set[str] = set()
     for model_id in model_ids:
-        model_module = get_torchvision_model_module(model_id)
+        model_module = get_torch_hub_model_module(model_id)
         model_modules.add(model_module)
     
     for model_module in model_modules:
@@ -70,18 +79,18 @@ def get_torchvision_model_types() -> dict[str, str]:
     return model_types
 
 
-def get_torchvision_model_module(model_id: str) -> str:
+def get_torch_hub_model_module(model_id: str) -> str:
     model_builder = torchvision.models.get_model_builder(model_id)
     return model_builder.__module__.rpartition('.')[0]
 
 
-def get_torchvision_model_type(model_id: str) -> str:
-    model_module = get_torchvision_model_module(model_id)
-    model_types = get_torchvision_model_types()
+def get_torch_hub_model_type(model_id: str) -> str:
+    model_module = get_torch_hub_model_module(model_id)
+    model_types = get_torch_hub_model_types()
     return model_types[model_module]
 
 
-def get_torchvision_model_input(model_id: str) -> torch.Tensor | tuple[torch.Tensor] | None:
+def get_torch_hub_model_input(model_id: str) -> torch.Tensor | tuple[torch.Tensor] | None:
     general_image_input = torch.randn(1, 3, 224, 224)
     optical_image_input = torch.randn(1, 3, 128, 128)
     model_inputs = dict(
@@ -93,5 +102,5 @@ def get_torchvision_model_input(model_id: str) -> torch.Tensor | tuple[torch.Ten
         video = None,
         _unknown_ = None,
     )
-    model_type = get_torchvision_model_type(model_id)
+    model_type = get_torch_hub_model_type(model_id)
     return model_inputs[model_type]

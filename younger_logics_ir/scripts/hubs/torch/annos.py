@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2024-12-13 15:23:32
+# Last Modified time: 2024-12-29 21:47:01
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -14,7 +14,7 @@
 ########################################################################
 
 
-from younger_logics_ir.scripts.commons.torchvision_utils import get_torchvision_model_type
+from .utils import get_torch_hub_model_type
 
 def get_heuristic_annotations(model_id: str, model_metrics: dict[str, dict[str, dict[str, float]]]) -> list[dict[str, dict[str, str]]] | None:
     annotations = dict()
@@ -31,7 +31,7 @@ def get_heuristic_annotations(model_id: str, model_metrics: dict[str, dict[str, 
     #         }
     #     }
     # }
-    task = get_torchvision_model_type(model_id)
+    task = get_torch_hub_model_type(model_id)
     metric_names = set()
     annotations['eval_results'] = list()
     for variation, variation_metrics in model_metrics.items():

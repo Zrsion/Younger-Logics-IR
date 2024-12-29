@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2024-12-13 15:51:31
+# Last Modified time: 2024-12-29 21:52:58
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -19,14 +19,14 @@ import torch
 import pathlib
 import torchvision
 
+from typing import Any
+
 from younger_logics_ir.modules import Instance
 
 from younger.commons.io import load_json, create_dir, delete_dir
 from younger.commons.logging import logger
 
-from younger_logics_ir.dataset.utils import get_instance_dirname
-from younger_logics_ir.scripts.commons.torchvision_utils import get_torchvision_model_info, get_torchvision_model_input, get_torchvision_model_module
-from younger_logics_ir.scripts.commons.torchvision_annos import get_heuristic_annotations
+from .utils import get_torch_hub_model_info, get_torch_hub_model_input, get_torch_hub_model_module
 
 
 def save_status(status_filepath: pathlib.Path, status: dict[str, str]):
@@ -36,9 +36,43 @@ def save_status(status_filepath: pathlib.Path, status: dict[str, str]):
 
 
 def main(
-    save_dirpath: pathlib.Path, cache_dirpath: pathlib.Path, model_ids_filepath: pathlib.Path, status_filepath: pathlib.Path,
+    model_infos_filepath: pathlib.Path,
+    save_dirpath: pathlib.Path, cache_dirpath: pathlib.Path,
 ):
-    model_ids: set[str] = set(load_json(model_ids_filepath))
+    model_infos: list[dict[str, Any]] = load_json(model_infos_filepath)
+
+    # Instances
+    instances_dirpath = save_dirpath.joinpath(f'Instances')
+    create_dir(instances_dirpath)
+
+    # Official
+    ofc_cache_dirpath = cache_dirpath.joinpath(f'Cache-OXOfc')
+    create_dir(ofc_cache_dirpath)
+
+    # Status
+    sts_cache_dirpath = cache_dirpath.joinpath(f'Cache-OXSts')
+    convert_status, last_handled_model_id = get_convert_status_and_last_handled_model_id(sts_cache_dirpath)
+    number_of_converted_models = len(convert_status)
+    logger.info(f'-> Previous Converted Models: {number_of_converted_models}')
+
+    logger.info(f'-> Instances Creating ...')
+    with tqdm.tqdm(total=len(model_infos), desc='Create Instances') as progress_bar:
+        for convert_index, model_info in enumerate(model_infos, start=1):
+            model_id = model_info['id']
+            if last_handled_model_id is not None:
+                if model_id == last_handled_model_id:
+                    last_handled_model_id = None
+                progress_bar.set_description(f'Converted, Skip - {model_id}')
+                progress_bar.update(1)
+                continue
+
+            convert_onnx(model_info, ofc_cache_dirpath)
+
+            set_convert_status_last_handled_model_id(sts_cache_dirpath, '?', model_id)
+            delete_dir(ofc_cache_dirpath, only_clean=True)
+
+    logger.info(f'-> Instances Created.')
+
 
     logger.info(f'-> Checking Existing Instances ...')
     for index, instance_dirpath in enumerate(save_dirpath.iterdir(), start=1):
@@ -90,8 +124,7 @@ def main(
             torch.onnx.export(model, model_input, str(onnx_model_filepath), verbose=True)
         logger.info(f'   ^ Finished.')
 
-        model_info = get_torchvision_model_info(model_id)
-        annotations = get_heuristic_annotations(model_id, model_info['metrics'])
+        model_info = get_torch_hub_model_info(model_id)
 
         logger.info(f'   v Converting ONNX Model into NetworkX ...')
         try:

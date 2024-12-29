@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2024-12-13 15:51:24
+# Last Modified time: 2024-12-29 21:22:49
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -14,104 +14,135 @@
 ########################################################################
 
 
+import tqdm
 import json
 import pathlib
 
 from onnx import hub
+from typing import Any, Literal
 
 from younger_logics_ir.modules import Instance
 
-from younger.commons.io import load_json, create_dir, delete_dir
+from younger.commons.io import loads_json, saves_json, create_dir, delete_dir, load_json
 from younger.commons.logging import logger
 
-from younger_logics_ir.dataset.utils import get_instance_dirname
-from younger.logics.ir.younger_logics_ir.scripts.hubs.onnx.onnx_utils import get_onnx_model_info
+from younger_logics_ir.converters import convert
+from younger_logics_ir.scripts.commons.utils import get_onnx_model_opset_version, get_onnx_opset_versions
 
 
-def save_status(status_filepath: pathlib.Path, status: dict[str, str]):
-    with open(status_filepath, 'a') as status_file:
-        status = json.dumps(status)
-        status_file.write(f'{status}\n')
+def convert_onnx(model_info: dict[str, Any], ofc_cache_dirpath: pathlib.Path) -> tuple[dict[str, dict[int, Any] | Literal['system_kill']], list[Instance]]:
+    status: dict[str, dict[int, str] | Literal['system_kill']] = dict()
+    instances: list[Instance] = list()
+
+    for variation in model_info['variations']:
+        model_id = model_info['id']
+        onnx_model = hub.load(model=model_id, opset=variation['opset'])
+        try:
+            instance = Instance()
+            instance.setup_logicx(convert(onnx_model))
+            onnx_model_opset_version = get_onnx_model_opset_version(onnx_model)
+            for onnx_opset_version in get_onnx_opset_versions():
+                if onnx_opset_version == onnx_model_opset_version:
+                    continue
+                try:
+                    # Convert the ONNX model to the target opset version. This step will not occupy disk space. Thus cvt_cache_dirpath is not used.
+                    other_version_onnx_model = onnx.version_converter.convert_version(onnx_model, onnx_opset_version)
+                    try:
+                        instance = Instance()
+                        instance.setup_logicx(convert(other_version_onnx_model))
+                        this_instances.append(instance)
+                        this_status[onnx_opset_version] = 'success'
+                    except Exception as exception:
+                        this_status[onnx_opset_version] = 'onnx2logicx_convert_error'
+                except Exception as exception:
+                    this_status[onnx_opset_version] = 'onnx2onnx_convert_error'
+                delete_dir(cvt_cache_dirpath, only_clean=True)
+
+
+    for remote_onnx_model_path in remote_onnx_model_paths:
+        remote_onnx_model_name = os.path.splitext(remote_onnx_model_path)[0]
+        onnx_model_path = pathlib.Path(hf_hub_download(model_id, remote_onnx_model_path, cache_dir=ofc_cache_dirpath))
+        results_queue = multiprocessing.Queue()
+        subprocess = multiprocessing.Process(target=safe_onnx_export, args=(cvt_cache_dirpath, onnx_model_path, results_queue))
+        subprocess.start()
+        subprocess.join()
+        if results_queue.empty():
+            this_status = 'system_kill'
+            this_instances = list()
+        else:
+            # this_status: dict[int, str]
+            # this_instances: list[Instance]
+            this_status, this_instances = results_queue.get()
+
+        status[remote_onnx_model_name] = this_status
+        instances.extend(this_instances)
+
+    delete_dir(model_id, cvt_cache_dirpath, ofc_cache_dirpath)
+    return status, instances
+
+
+def get_convert_status_and_last_handled_model_id(sts_cache_dirpath: pathlib.Path) -> tuple[list[dict[str, dict[int, Any]]], str | None]:
+    convert_status: dict[str, dict[int, Any]] = list()
+    status_filepath = sts_cache_dirpath.joinpath(f'default.sts')
+    if status_filepath.is_file():
+        with open(status_filepath, 'r') as status_file:
+            convert_status: dict[str, dict[int, Any]] = [loads_json(line.strip()) for line in status_file]
+
+    last_handled_filepath = sts_cache_dirpath.joinpath(f'default_last_handled.sts')
+    if last_handled_filepath.is_file():
+        with open(last_handled_filepath, 'r') as last_handled_file:
+            model_id = last_handled_file.read().strip()
+        last_handled_model_id = model_id
+    else:
+        last_handled_model_id = None
+    return convert_status, last_handled_model_id
+
+
+def set_convert_status_last_handled_model_id(sts_cache_dirpath: pathlib.Path, convert_status: dict[str, dict[str, Any]], model_id: str):
+    convert_status_filepath = sts_cache_dirpath.joinpath(f'default.sts')
+    with open(convert_status_filepath, 'a') as convert_status_file:
+        convert_status_file.write(f'{saves_json((model_id, convert_status))}\n')
+
+    last_handled_filepath = sts_cache_dirpath.joinpath(f'default_last_handled.sts')
+    with open(last_handled_filepath, 'w') as last_handled_file:
+        last_handled_file.write(f'{model_id}\n')
 
 
 def main(
-    save_dirpath: pathlib.Path, cache_dirpath: pathlib.Path, model_ids_filepath: pathlib.Path, status_filepath: pathlib.Path,
+    model_infos_filepath: pathlib.Path,
+    save_dirpath: pathlib.Path, cache_dirpath: pathlib.Path,
 ):
-    hub.set_dir(str(cache_dirpath.absolute()))
-    logger.info(f'ONNX Hub cache location is set to: {hub.get_dir()}')
+    model_infos: list[dict[str, Any]] = load_json(model_infos_filepath)
 
-    model_ids: set[str] = set(load_json(model_ids_filepath))
+    # Instances
+    instances_dirpath = save_dirpath.joinpath(f'Instances')
+    create_dir(instances_dirpath)
 
-    logger.info(f'-> Checking Existing Instances ...')
-    for index, instance_dirpath in enumerate(save_dirpath.iterdir(), start=1):
-        if len(model_ids) == 0:
-            logger.info(f'-> Finished. All Models Have Been Already Converted.')
-            break
-        instance = Instance()
-        instance.load(instance_dirpath)
-        if instance.labels['model_source'] == 'ONNX':
-            logger.info(f' . Converted. Skip Total {index} - {instance.labels["model_name"]}')
-            model_ids = model_ids - {instance.labels['model_name']}
+    # Official
+    ofc_cache_dirpath = cache_dirpath.joinpath(f'Cache-OXOfc')
+    create_dir(ofc_cache_dirpath)
+    hub.set_dir(str(ofc_cache_dirpath))
 
-    if status_filepath.is_file():
-        logger.info(f'-> Found Existing Status File')
-        logger.info(f'-> Now Checking Status File ...')
-        with open(status_filepath, 'r') as status_file:
-            for index, line in enumerate(status_file, start=1):
-                try:
-                    status = json.loads(line)
-                except:
-                    logger.warn(f' . Skip No.{index}. Parse Error: Line in Status File: {line}')
-                    continue
-
-                if status['model_name'] not in model_ids:
-                    logger.info(f' . Skip No.{index}. Not In Model ID List.')
-                    continue
-
-                logger.info(f' . Skip No.{index}. This Model Converted Before With Status: \"{status["flag"]}\".')
-                model_ids = model_ids - {status['model_name']}
-    else:
-        logger.info(f'-> Not Found Existing Status Files')
-
-    onnx_cache_dirpath = cache_dirpath.joinpath('ONNX')
-    create_dir(onnx_cache_dirpath)
-    hub.set_dir(onnx_cache_dirpath)
+    # Status
+    sts_cache_dirpath = cache_dirpath.joinpath(f'Cache-OXSts')
+    convert_status, last_handled_model_id = get_convert_status_and_last_handled_model_id(sts_cache_dirpath)
+    number_of_converted_models = len(convert_status)
+    logger.info(f'-> Previous Converted Models: {number_of_converted_models}')
 
     logger.info(f'-> Instances Creating ...')
-    for index, model_id in enumerate(model_ids, start=1):
-        logger.info(f' # No.{index} Model ID = {model_id}: Now Converting ...') 
-        model_info = get_onnx_model_info(model_id)
+    with tqdm.tqdm(total=len(model_infos), desc='Create Instances') as progress_bar:
+        for convert_index, model_info in enumerate(model_infos, start=1):
+            model_id = model_info['id']
+            if last_handled_model_id is not None:
+                if model_id == last_handled_model_id:
+                    last_handled_model_id = None
+                progress_bar.set_description(f'Converted, Skip - {model_id}')
+                progress_bar.update(1)
+                continue
 
-        logger.info(f'   v Converting ONNX Model into NetworkX ...')
-        for convert_index, variation in enumerate(model_info['variations'], start=1):
-            onnx_model = hub.load(model=model_id, opset=variation['opset'])
-            onnx_model_filepath = onnx_cache_dirpath.joinpath(variation['path'])
-            try:
-                instance = Instance(
-                    model=onnx_model,
-                    labels=dict(
-                        model_source='ONNX',
-                        model_name=model_id,
-                        onnx_model_filename=onnx_model_filepath.name,
-                        download=None,
-                        like=None,
-                        tag=variation['tags'],
-                        readme=None,
-                        annotations=None
-                    )
-                )
-                instance_save_dirpath = save_dirpath.joinpath(get_instance_dirname(model_id.replace(' ', '_').replace('/', '--TV--'), 'ONNX', f'{onnx_model_filepath.stem}-{convert_index}'))
-                instance.save(instance_save_dirpath)
-                logger.info(f'     ┌ No.{convert_index} (Opset={variation["opset"]}) Converted')
-                logger.info(f'     | From: {onnx_model_filepath}')
-                logger.info(f'     └ Save: {instance_save_dirpath}')
-                flag = 'success'
-            except Exception as exception:
-                logger.info(f'     ┌ No.{convert_index} (Opset={variation["opset"]}) Error')
-                logger.error(f'    └ [ONNX -> NetworkX Error] OR [Instance Saving Error] - {exception}')
-                flag = 'fail'
-        logger.info(f'   ^ Converted.')
-        save_status(status_filepath, dict(model_name=model_id, flag=flag))
-        delete_dir(onnx_cache_dirpath, only_clean=True)
+            convert_onnx(model_info, ofc_cache_dirpath)
+
+            set_convert_status_last_handled_model_id(sts_cache_dirpath, '?', model_id)
+            delete_dir(ofc_cache_dirpath, only_clean=True)
 
     logger.info(f'-> Instances Created.')
