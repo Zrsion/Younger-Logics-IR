@@ -84,6 +84,10 @@ def get_torch_hub_model_module(model_id: str) -> str:
     return model_builder.__module__.rpartition('.')[0]
 
 
+def get_torch_hub_model_model_instance(model_id: str) -> torch.nn.Module:
+    return torchvision.models.get_model(model_id, weights=None)
+
+
 def get_torch_hub_model_type(model_id: str) -> str:
     model_module = get_torch_hub_model_module(model_id)
     model_types = get_torch_hub_model_types()
