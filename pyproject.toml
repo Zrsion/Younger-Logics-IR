@@ -4,7 +4,10 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
 include = ["younger_logics_ir"]
-exclude = ["test", "younger_logics_ir/scripts/commons/hubs/huggingface/third_parties"]
+exclude = [
+    "test/*",
+    "younger_logics_ir/scripts/hubs/huggingface/third_parties/*"
+]
 
 [project]
 name = "Younger-Logics-IR"
@@ -34,6 +37,7 @@ classifiers=[
 ]
 
 dependencies = [
+    "onnx",
     "tqdm",
     "click",
     "psutil",
@@ -42,9 +46,11 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-scripts = ['onnx', 'huggingface_hub', 'torchvision', 'isocodes']
+scripts-hf = ["huggingface_hub"]
+scripts-ox = []
+scripts-tr = ["torch", "torchvision"]
+scripts = ["numpy", "pandas", "isocodes", "huggingface_hub", "torch", "torchvision"]
 
-construct = ["torch-geometric"]
 developer = [
     "sphinx"
 ]
