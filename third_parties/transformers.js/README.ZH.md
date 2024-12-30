@@ -47,3 +47,10 @@ bash ./convert.sh $MODEL_IDS_FILEPATH} ${CACHE_DIRPATH} ${SAVE_DIRPATH}
 - 添加了参数`remove_other_files`，作用为转化`instance`后删除途中下载的`onnx`模型以及相关信息文件
 - 添加了注释为step3、5的代码段，作用为将`onnx`转换为`instance`，并执行上一步中的`remove_other_files`
 - 添加了`onnx2instance`函数
+
+## Requirements
+transformers[torch]==4.33.2
+onnxruntime<1.16.0
+optimum==1.13.2
+tqdm
+onnx==1.16.0
