@@ -16,25 +16,106 @@
 
 from onnx import hub
 from typing import Any
-
+import requests
+import re
+from younger.commons.string import extract_possible_tables_from_readme_string
 
 def get_onnx_hub_model_infos() -> list[dict[str, Any]]:
-    model_infos = dict()
-    for model in sorted(hub.list_models(), key=lambda x: x.metadata['model_bytes']):
-        model_id = model.model
-        model_info = model_infos.get(model_id, list())
-        model_info.append(
-            dict(
-                tags = list(model.tags),
-                meta = model.metadata,
-                path = model.model_path,
-                hash = model.model_sha,
-                opset = model.opset,
-                raw = model.raw_model_info,
-            )
-        )
-        model_infos[model_id] = model_info
-    model_infos = [dict(id=model_id, variations=model_info) for model_id, model_info in model_infos.items()]
+    response = requests.get("https://github.com/onnx/models/raw/main/README.md")
+    if response.status_code == 200:
+        readme_data = response.text
+    else:
+        raise Exception("Failed to get README.md from onnx/models")
+
+    official_task = [
+        "Image Classification",
+        "Domain-based Image Classification",
+        "Object Detection & Image Segmentation",
+        "Body, Face & Gesture Analysis",
+        "Image Manipulation",
+        "Machine Comprehension",
+        "Machine Translation",
+        "Language Modelling",
+        "Visual Question Answering & Dialog",
+        "Speech & Audio Processing",
+        "Other interesting models"
+    ]
+
+    task2table = {}
+
+    lines = readme_data.split("\n")
+    flag = False
+    for line in lines:
+        if line.startswith("#"):
+            task = line.replace("#", "")
+            pattern = r'<a[^>]*>.*?</a>|<a[^>]*/>'
+            task = re.sub(pattern, "", task)
+            task = task.strip()
+            if task in official_task:
+                flag = True
+                task2table[task] = []
+            else:
+                flag = False
+        else:
+            if flag:
+                task2table[task].append(line)
+    for task in task2table:
+        task2table[task] = extract_possible_tables_from_readme_string("\n".join(task2table[task]))
+
+    name2task = {}
+    for task in task2table:
+        for table in task2table[task]:  
+            for i in range(len(table["rows"])):
+                model_class = table["rows"][i][0]
+                pattern = r'\[(.*)\]\((validated/.*)\)'
+                match = re.search(pattern, model_class)
+                if match:
+                    name2task[match.group(1)] = task
+
+    tasks = ["Computer_Vision", "Generative_AI", "Graph_Machine_Learning", "Natural_Language_Processing"]
+    authors = ["timm", "torch_hub", "torchvision", "transformers", "graph_convolutions"]
+
+    response = requests.get("https://api.github.com/repos/onnx/models/git/trees/main?recursive=1")
+
+    if response.status_code == 200:
+        tree_data = response.json()["tree"]
+    else:
+        raise Exception("Failed to get tree data from onnx/models")
+
+    model_infos = list()
+    for item in tree_data:
+        if item["path"].endswith(".onnx"):
+            task = item["path"].split("/")[0]
+            if task in tasks:
+                second_path = item["path"].split("/")[1].strip()
+                if second_path == "skip":
+                    second_path = item["path"].split("/")[2].strip()
+                author = None
+                for i in range(len(authors)):
+                    if second_path.endswith(authors[i]):
+                        author = authors[i]
+                second_path = second_path.replace(f"_{author}", "")
+                opset = second_path.split("_")[-1]
+                model_id = author + "/" +second_path.replace(f"_{opset}", "")
+                model_infos.append(
+                    dict(model_id=model_id, 
+                        task=task,
+                        opset=int(opset.replace("Opset", "")),
+                        url="https://github.com/onnx/models/raw/main/" + item["path"]
+                        )
+                )
+            elif task == "validated":
+                onnx_name = item["path"].split("/")[-1]
+                for name in name2task:
+                    if name.lower() in onnx_name.lower():   
+                        model_infos.append(
+                            dict(model_id=onnx_name.strip(".onnx"), 
+                                task=name2task[name],
+                                opset=-1,
+                                url="https://github.com/onnx/models/raw/main/" + item["path"]
+                                )
+                        )   
+
     return model_infos
 
 
