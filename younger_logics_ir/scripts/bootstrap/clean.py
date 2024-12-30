@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2024-12-30 17:09:13
+# Last Modified time: 2024-12-30 21:35:32
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -20,7 +20,7 @@ import multiprocessing
 
 from younger.commons.logging import logger
 
-from younger_logics_ir.modules import Dataset, Instance, Origin
+from younger_logics_ir.modules import Dataset, Instance, LogicX, Origin
 
 
 def standardize_instance(parameter: tuple[str, int]) -> tuple[Origin, Instance, list[Instance], bool]:
@@ -38,11 +38,20 @@ def standardize_instance(parameter: tuple[str, int]) -> tuple[Origin, Instance, 
 
 def main(load_dirpath: pathlib.Path, save_dirpath: pathlib.Path, worker_number: int = 4):
     logger.info(f'Scanning Instances Directory Path: {load_dirpath}')
-    parameters = list()
-    for instance_dirpath in load_dirpath.iterdir():
-        parameters.append((instance_dirpath, opset_version))
+    instances = Dataset.drain_instances(load_dirpath)
+    logger.info(f'Total Instances To Be Filtered: {len(instances)}')
 
-    logger.info(f'Total Instances To Be Filtered: {len(parameters)}')
+    logger.info(f'Cleaning Instances ...')
+    heterogeneous_instances: dict[str, (Instance)] = dict()
+    for instance in instances:
+        assert len(instance.labels) == 1, f'Initial Instance Labels Must Be Single Instead {len(instance.labels)}!'
+        instance_label = instance.labels[0]
+        logicx_hash = LogicX.hash(instance.logicx)
+        if logicx_hash not in heterogeneous_instances:
+            heterogeneous_instances[logicx_hash] = instance
+        else:
+            heterogeneous_instances[logicx_hash].insert_label(instance_label)
+    logger.info(f'Total Heterogeneous Instances: {len(heterogeneous_instances)}')
 
     instances: list[Instance] = list()
     with multiprocessing.Pool(worker_number) as pool:

@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2024-12-26 17:13:48
+# Last Modified time: 2024-12-30 21:31:51
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -238,8 +238,12 @@ class Dataset(object):
     def drain_instances(cls, instances_dirpath: pathlib.Path, strict: bool = False) -> list[Instance]:
         """
 
-        :param dataset_dirpath: _description_
-        :type dataset_dirpath: pathlib.Path
+        :param instances_dirpath: _description_
+        :type instances_dirpath: pathlib.Path
+        :param strict: _description_, defaults to False
+        :type strict: bool, optional
+
+        :raises exception: _description_
 
         :return: _description_
         :rtype: list[Instance]
@@ -262,7 +266,8 @@ class Dataset(object):
                         continue
                 instances.append(instance)
                 progress_bar.update(1)
-        return
+
+        return instances
 
     @classmethod
     def flush_instances(cls, instances: list[Instance], instances_dirpath: pathlib.Path, strict: bool = False) -> None:
@@ -270,8 +275,12 @@ class Dataset(object):
 
         :param instances: _description_
         :type instances: list[Instance]
-        :param dataset_dirpath: _description_
-        :type dataset_dirpath: pathlib.Path
+        :param instances_dirpath: _description_
+        :type instances_dirpath: pathlib.Path
+        :param strict: _description_, defaults to False
+        :type strict: bool, optional
+
+        :raises exception: _description_
         """
 
         logger.info(f' = [YL-IR] = Flushing Instances @ {instances_dirpath}...')
@@ -290,4 +299,3 @@ class Dataset(object):
                         continue
 
                 progress_bar.update(1)
-        return
