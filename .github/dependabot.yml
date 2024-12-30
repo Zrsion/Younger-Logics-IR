@@ -1,0 +1,10 @@
+# Specify the locations of the manifest files to update for each package manager
+# using both `directories` and `directory`
+
+version: 2
+updates:
+  - package-ecosystem: "pip"
+    # Update manifest files stored in the root directory daily
+    directory: "/"
+    schedule:
+      interval: "weekly"
