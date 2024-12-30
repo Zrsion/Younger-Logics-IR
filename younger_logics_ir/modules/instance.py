@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2024-12-26 16:44:48
+# Last Modified time: 2024-12-30 16:23:49
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -184,3 +184,36 @@ class Instance(object):
             if self.meta.is_new:
                 self.meta.set_release(version)
         return
+
+    @classmethod
+    def copy(cls, instance: 'Instance') -> 'Instance':
+        """
+        Copy Instance.
+        .. todo::
+            This project want deepcopy and we want to check the performance of deepcopy.
+
+        :param instance: _description_
+        :type instance: Instance
+        :return: _description_
+        :rtype: Instance
+        """
+        instance_copy = Instance()
+        instance_copy.setup_logicx(instance.logicx)
+        for implementation in instance.labels:
+            instance_copy.insert_label(Implementation.copy(implementation))
+
+        return instance_copy
+
+    @classmethod
+    def standardize(cls, instance: 'Instance') -> tuple['Instance', list['Instance']]:
+        std_logicx, std_logicx_sods = LogicX.standardize(instance.logicx)
+
+        instance.setup_logicx(std_logicx)
+
+        instance_sods = list() # sods: Sons or Descendants
+        for std_logicx_sod in std_logicx_sods:
+            std_instance = Instance()
+            std_instance.setup_logicx(std_logicx_sod)
+            instance_sods.append(std_instance)
+
+        return instance, instance_sods

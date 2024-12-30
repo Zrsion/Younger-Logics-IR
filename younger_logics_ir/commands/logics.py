@@ -1,45 +1,3 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-#
-# Copyright (c) Jason Young (杨郑鑫).
-#
-# E-Mail: <AI.Jason.Young@outlook.com>
-# 2024-04-04 12:15
-#
-# This source code is licensed under the Apache-2.0 license found in the
-# LICENSE file in the root directory of this source tree.
-
-
-import pathlib
-import argparse
-
-
-def run(arguments):
-    pass
-
-
-def convert_run(arguments):
-    pass
-
-
-def retrieve_run(arguments):
-    pass
-
-
-def filter_run(arguments):
-    update_logger(arguments)
-    dataset_dirpath = pathlib.Path(arguments.dataset_dirpath)
-    save_dirpath = pathlib.Path(arguments.save_dirpath)
-
-    from younger.datasets.constructors.official import filter
-
-    filter.main(
-        dataset_dirpath, save_dirpath,
-        arguments.worker_number,
-        arguments.max_inclusive_version,
-        arguments.clean,
-    )
-
 
 def split_run(arguments):
     update_logger(arguments)
@@ -141,21 +99,6 @@ def api_run(arguments):
             arguments.token,
             arguments.proxy,
         )
-
-
-
-def set_datasets_filter_arguments(parser: argparse.ArgumentParser):
-    parser.add_argument('--dataset-dirpath', type=str, required=True)
-    parser.add_argument('--save-dirpath', type=str, default='.')
-
-    parser.add_argument('--max-inclusive-version', type=int, default=None)
-
-    parser.add_argument('--clean', action='store_true')
-
-    parser.add_argument('--worker-number', type=int, default=4)
-
-    parser.add_argument('--logging-filepath', type=str, default=None)
-    parser.set_defaults(run=filter_run)
 
 
 def set_datasets_split_arguments(parser: argparse.ArgumentParser):

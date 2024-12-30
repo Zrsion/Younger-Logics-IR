@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2024-12-26 10:58:41
+# Last Modified time: 2024-12-30 16:22:53
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -282,7 +282,10 @@ class Implementation(object):
         self._download = download
 
     def setup_performances(self, performances: dict[Benchmark, dict[Evaluation, Any]] | None) -> None:
-        self._performances = performances
+        self._performances = dict()
+        for benchmark, evaluation2performance in performances.items():
+            for evaluation, performance in evaluation2performance.items():
+                self.insert_performance(benchmark, evaluation, performance)
 
     @classmethod
     def load_dict(cls, d: dict) -> 'Implementation':
@@ -358,6 +361,25 @@ class Implementation(object):
         :rtype: str
         """
         return hash_string(cls.saves(implementation))
+
+    @classmethod
+    def copy(cls, implementation: 'Implementation') -> 'Implementation':
+        """
+        Copy Implementation.
+        .. todo::
+            This project want deepcopy and we want to check the performance of deepcopy.
+
+        :param implementation: _description_
+        :type implementation: Implementation
+        :return: _description_
+        :rtype: Implementation
+        """
+        return Implementation(
+            implementation.origin,
+            implementation.like,
+            implementation.download,
+            implementation.performances
+        )
 
     def search_performance(self, benchmark: Benchmark, evaluation: Evaluation) -> Any:
         return self._performances.get(benchmark, dict()).get(evaluation, None)

@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2024-12-26 10:57:31
+# Last Modified time: 2024-12-30 16:21:00
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -14,6 +14,7 @@
 ########################################################################
 
 
+import copy
 import pathlib
 import networkx
 
@@ -68,12 +69,14 @@ class LogicX(object):
         assert logicx_filepath.is_file(), f'There is no \"LogicX\" can be loaded from the specified path \"{logicx_filepath.absolute()}\".'
         sdag = self.__class__.saves_dag(self._dag)
         ssrc = saves_pickle(self._src)
-        save_pickle((sdag, ssrc), logicx_filepath)
+        srelationship = saves_pickle(self._relationship)
+        save_pickle((sdag, ssrc, srelationship), logicx_filepath)
         return 
 
     def save(self, logicx_filepath: pathlib.Path) -> None:
         assert not logicx_filepath.is_file(), f'\"LogicX\" can not be saved into the specified path \"{logicx_filepath.absolute()}\".'
-        (ldag, lsrc) = load_pickle(logicx_filepath)
+        (ldag, lsrc, lrelationship) = load_pickle(logicx_filepath)
+        self._relationship = load_pickle(lrelationship)
         self._src = loads_pickle(lsrc)
         self._dag = self.__class__.loads_dag(ldag)
         return
@@ -238,3 +241,18 @@ class LogicX(object):
         """
         assert logicx.standard, f'\"LogicX\" is not standardized!'
         return hash_string(cls.saves_dag(logicx.dag))
+
+    @classmethod
+    def copy(cls, logicx: 'LogicX') -> 'LogicX':
+        """
+        Copy LogicX.
+        .. todo::
+            This project want deepcopy and we want to check the performance of deepcopy.
+
+        :param logicx: _description_
+        :type logicx: LogicX
+        :return: _description_
+        :rtype: LogicX
+        """
+        logicx_copy = LogicX(logicx.src, copy.deepcopy(logicx.dag))
+        return logicx_copy
