@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2024-12-29 17:13:34
+# Last Modified time: 2024-12-30 15:27:31
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -254,7 +254,7 @@ def get_heuristic_annotations(model_id: str, model_card_data: ModelCardData) -> 
             #      type: gsarti/change_it
             #      name: "CHANGE-IT"
             if hf_task_type == hf_dataset_type:
-                logger.warn(f'Eval Results Annotations Maybe Wrong. Try To Fix: Model ID {model_id}')
+                logger.warning(f'Eval Results Annotations Maybe Wrong. Try To Fix: Model ID {model_id}')
                 hf_task_name, hf_dataset_name = hf_task_type, hf_task_name
                 hf_task_type, hf_dataset_type = '', ''
             elif hf_dataset_name in hf_task_type:
@@ -266,7 +266,7 @@ def get_heuristic_annotations(model_id: str, model_card_data: ModelCardData) -> 
                     words = [word for word in hf_dataset_name.split()] + [word for word in hf_dataset_type.split()]
                     for word in words:
                         if word in hf_task_name:
-                            logger.warn(f'Eval Results Annotations Maybe Wrong. Try To Fix: Model ID {model_id}')
+                            logger.warning(f'Eval Results Annotations Maybe Wrong. Try To Fix: Model ID {model_id}')
                             hf_task_type, hf_dataset_name = hf_dataset_type, hf_task_name
                             hf_task_name, hf_dataset_type = '', ''
                             break
@@ -287,7 +287,7 @@ def get_heuristic_annotations(model_id: str, model_card_data: ModelCardData) -> 
                 dataset_split = detect_dataset_split(clean_string(detailed_dataset_name))
 
             if isinstance(hf_metric_value, list):
-                logger.warn(f'Skip. Useless Metric Value. Model ID {model_id} {eval_result.metric_value}')
+                logger.warning(f'Skip. Useless Metric Value. Model ID {model_id} {eval_result.metric_value}')
                 metric_info = None
                 candidate_hf_metrics = list()
             elif isinstance(hf_metric_value, dict):
