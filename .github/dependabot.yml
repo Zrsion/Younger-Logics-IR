@@ -7,4 +7,5 @@ updates:
     # Update manifest files stored in the root directory daily
     directory: "/"
     schedule:
-      interval: "weekly"
+      interval: "daily"
+    file: "requirements.txt"
