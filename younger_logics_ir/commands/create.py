@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2024-12-29 16:55:17
+# Last Modified time: 2024-12-30 09:32:33
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -63,7 +63,7 @@ def create_onnx_retrieve_huggingface(
 
 
 @create_onnx_retrieve.command(name='onnx')
-@click.option('--mode',             required=True,  type=click.Choice(['Model_Infos', 'Model_IDs'], case_sensitive=True), help='Indicates the type of data that needs to be retrieved from Huggingface.')
+@click.option('--mode',             required=True,  type=click.Choice(['Model_Infos', 'Model_IDs'], case_sensitive=True), help='Indicates the type of data that needs to be retrieved from ONNX Model Zoo.')
 @click.option('--save-dirpath',     required=True,  type=click.Path(exists=True, file_okay=False, dir_okay=True, path_type=pathlib.Path), help='The directory where the data will be saved.')
 @click.option('--force-reload',     is_flag=True,   help='Use to ignore previous download records and redownload after use.')
 @click.option('--logging-filepath', required=False, type=click.Path(exists=True, file_okay=True, dir_okay=False, path_type=pathlib.Path), default=None, help='Path to the log file; if not provided, defaults to outputting to the terminal only.')
@@ -85,11 +85,11 @@ def create_onnx_retrieve_onnx(
 
 
 @create_onnx_retrieve.command(name='torch')
-@click.option('--mode',             required=True,  type=click.Choice(['Model_Infos', 'Model_IDs'], case_sensitive=True), help='Indicates the type of data that needs to be retrieved from Huggingface.')
+@click.option('--mode',             required=True,  type=click.Choice(['Model_Infos', 'Model_IDs'], case_sensitive=True), help='Indicates the type of data that needs to be retrieved from Torch Hub.')
 @click.option('--save-dirpath',     required=True,  type=click.Path(exists=True, file_okay=False, dir_okay=True, path_type=pathlib.Path), help='The directory where the data will be saved.')
 @click.option('--force-reload',     is_flag=True,   help='Use to ignore previous download records and redownload after use.')
 @click.option('--logging-filepath', required=False, type=click.Path(exists=True, file_okay=True, dir_okay=False, path_type=pathlib.Path), default=None, help='Path to the log file; if not provided, defaults to outputting to the terminal only.')
-def create_onnx_retrieve_torchvision(
+def create_onnx_retrieve_torch(
     mode,
     save_dirpath,
     force_reload,
@@ -112,7 +112,7 @@ def create_onnx_convert():
 
 
 @create_onnx_convert.group(name='huggingface')
-@click.option('--model-infos-filepath',   required=True,  type=click.Path(exists=True, file_okay=True, dir_okay=False, path_type=pathlib.Path), help='The filepath specifies the address of the Model IDs file, which is obtained using the command: `younger logics ir create onnx retrieve [hub_type] --mode Model_IDs ...`.')
+@click.option('--model-infos-filepath',   required=True,  type=click.Path(exists=True, file_okay=True, dir_okay=False, path_type=pathlib.Path), help='The filepath specifies the address of the Model Infos file, which is obtained using the command: `younger logics ir create onnx retrieve huggingface --mode Model_Infos ...`.')
 @click.option('--save-dirpath',         required=True,  type=click.Path(exists=True, file_okay=False, dir_okay=True, path_type=pathlib.Path), help='The directory where the data will be saved.')
 @click.option('--cache-dirpath',        required=True,  type=click.Path(exists=True, file_okay=False, dir_okay=True, path_type=pathlib.Path), help='Cache directory, where data is volatile.')
 @click.option('--device',               required=False, type=click.Choice(['cpu', 'cuda'], case_sensitive=True), default='cpu', help='Used to indicate whether to use GPU or CPU when converting models.')
@@ -134,39 +134,37 @@ def create_onnx_convert_huggingface(
 
 
 @create_onnx_convert.group(name='onnx')
-@click.option('--model-ids-filepath',   required=True,  type=click.Path(exists=True, file_okay=True, dir_okay=False, path_type=pathlib.Path), help='The filepath specifies the address of the Model IDs file, which is obtained using the command: `younger logics ir create onnx retrieve [hub_type] --mode Model_IDs ...`.')
+@click.option('--model-infos-filepath',   required=True,  type=click.Path(exists=True, file_okay=True, dir_okay=False, path_type=pathlib.Path), help='The filepath specifies the address of the Model Infos file, which is obtained using the command: `younger logics ir create onnx retrieve onnx --mode Model_Infos ...`.')
 @click.option('--save-dirpath',         required=True,  type=click.Path(exists=True, file_okay=False, dir_okay=True, path_type=pathlib.Path), help='The directory where the data will be saved.')
 @click.option('--cache-dirpath',        required=True,  type=click.Path(exists=True, file_okay=False, dir_okay=True, path_type=pathlib.Path), help='Cache directory, where data is volatile.')
-@click.option('--status-filepath',      required=False, type=click.Path(exists=True, file_okay=True, dir_okay=False, path_type=pathlib.Path), default=None, help='The file records the conversion status of the models that have already been processed. If it is deleted, the processing progress will be lost.')
 @click.option('--logging-filepath',     required=False, type=click.Path(exists=True, file_okay=True, dir_okay=False, path_type=pathlib.Path), default=None, help='Path to the log file; if not provided, defaults to outputting to the terminal only.')
 def create_onnx_convert_onnx(
-    model_ids_filepath,
-    save_dirpath, cache_dirpath, status_filepath,
+    model_infos_filepath,
+    save_dirpath, cache_dirpath,
     logging_filepath
 ):
     equip_logger(logging_filepath)
 
     from younger_logics_ir.scripts.hubs.onnx import convert
 
-    convert.main(save_dirpath, cache_dirpath, model_ids_filepath, status_filepath)
+    convert.main(model_infos_filepath, save_dirpath, cache_dirpath)
 
 
-@create_onnx_convert.group(name='torchvision')
-@click.option('--model-ids-filepath',   required=True,  type=click.Path(exists=True, file_okay=True, dir_okay=False, path_type=pathlib.Path), help='The filepath specifies the address of the Model IDs file, which is obtained using the command: `younger logics ir create onnx retrieve [hub_type] --mode Model_IDs ...`.')
+@create_onnx_convert.group(name='torch')
+@click.option('--model-infos-filepath',   required=True,  type=click.Path(exists=True, file_okay=True, dir_okay=False, path_type=pathlib.Path), help='The filepath specifies the address of the Model Infos file, which is obtained using the command: `younger logics ir create onnx retrieve torch --mode Model_Infos ...`.')
 @click.option('--save-dirpath',         required=True,  type=click.Path(exists=True, file_okay=False, dir_okay=True, path_type=pathlib.Path), help='The directory where the data will be saved.')
 @click.option('--cache-dirpath',        required=True,  type=click.Path(exists=True, file_okay=False, dir_okay=True, path_type=pathlib.Path), help='Cache directory, where data is volatile.')
-@click.option('--status-filepath',      required=False, type=click.Path(exists=True, file_okay=True, dir_okay=False, path_type=pathlib.Path), default=None, help='The file records the conversion status of the models that have already been processed. If it is deleted, the processing progress will be lost.')
 @click.option('--logging-filepath',     required=False, type=click.Path(exists=True, file_okay=True, dir_okay=False, path_type=pathlib.Path), default=None, help='Path to the log file; if not provided, defaults to outputting to the terminal only.')
-def create_onnx_convert_torchvision(
-    model_ids_filepath,
-    save_dirpath, cache_dirpath, status_filepath,
+def create_onnx_convert_torch(
+    model_infos_filepath,
+    save_dirpath, cache_dirpath,
     logging_filepath
 ):
     equip_logger(logging_filepath)
 
     from younger_logics_ir.scripts.hubs.torch import convert
 
-    convert.main(save_dirpath, cache_dirpath, model_ids_filepath, status_filepath)
+    convert.main(model_infos_filepath, save_dirpath, cache_dirpath)
 
 
 @create.group(name='core')
