@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2024-12-23 11:01:56
+# Last Modified time: 2024-12-30 22:39:52
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -865,7 +865,11 @@ def trans_graph_proto(ox_graph: onnx.GraphProto, depth: int | None = None, const
 
         # Topology Unique Identifier (TUID)
         if node_type == 'operator':
-            node_tuid = f'{node_type}-{str((node_attr['op_type'], node_attr['domain'], node_attr['since_version']))}'
+            op_type = node_attr['op_type']
+            domain = node_attr['domain']
+            since_version = node_attr['since_version']
+            opset_version = opset_import[domain]
+            node_tuid = f'{node_type}-{str((op_type, domain, since_version, opset_version))}'
         else:
             node_tuid = f'{node_type}'
 
@@ -873,7 +877,7 @@ def trans_graph_proto(ox_graph: onnx.GraphProto, depth: int | None = None, const
         number_of_this_type_node_value = nx_graph.graph.get(number_of_this_type_node_key, 0)
         node_index = f'{ox_graph.name}-{depth}-{node_type}-{number_of_this_type_node_value}'
         nx_graph.graph[number_of_this_type_node_key] = number_of_this_type_node_value + 1
-        nx_graph.add_node(node_index, dict(node_type=node_type, node_name=node_name, node_attr=node_attr, node_tuid=node_tuid))
+        nx_graph.add_node(node_index, node_type=node_type, node_name=node_name, node_attr=node_attr, node_tuid=node_tuid)
         return node_index
 
     def add_edge(tail_index: str, head_index: str, emit_index: int, trap_index: int) -> None:
@@ -1087,9 +1091,7 @@ def trans_model_proto(model: onnx.ModelProto, neglect_tensor_values: bool = True
     opset_import: dict[str, int] = dict()
     for ox_model_opset_import in model.opset_import:
         ox_model_opset_import: dict[str, str | int] = trans_operator_set_id_proto(ox_model_opset_import)
-        domain: str = ox_model_opset_import['domain']
-        version: int = ox_model_opset_import['version']
-        opset_import[domain] = version
+        opset_import[ox_model_opset_import['domain']] = ox_model_opset_import['version']
 
     metadata_props: list[dict[str, str]] = list()
     for ox_model_metadata_props in model.metadata_props:

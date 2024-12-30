@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2024-12-30 16:21:00
+# Last Modified time: 2024-12-30 22:40:08
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -213,6 +213,30 @@ class LogicX(object):
 
         logicx._relationship = logicx_hash
         return logicx, logicx_sons + logicx_descendants
+
+    @classmethod
+    def skeletonize(cls, logicx: 'LogicX') -> 'LogicX':
+        """
+        Skeletonize LogicX.
+
+        :param logicx: _description_
+        :type logicx: LogicX
+
+        :return: _description_
+        :rtype: LogicX
+        """
+
+        assert logicx.standard, f'\"LogicX\" is not standardized!'
+        src = logicx.src
+        dag = networkx.DiGraph()
+        for node_index in logicx.dag.nodes():
+            dag.add_node(node_index, node_tuid=logicx.dag.nodes[node_index]['node_tuid'])
+
+        for edge_u_index, edge_v_index in logicx.dag.edges():
+            dag.add_edge(edge_u_index, edge_v_index)
+
+        logicx_skeleton = LogicX(src, dag)
+        return logicx_skeleton
 
     @classmethod
     def hash(cls, logicx: 'LogicX') -> str:

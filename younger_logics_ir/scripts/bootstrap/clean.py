@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2024-12-30 21:35:32
+# Last Modified time: 2024-12-30 22:45:27
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -46,11 +46,11 @@ def main(load_dirpath: pathlib.Path, save_dirpath: pathlib.Path, worker_number: 
     for instance in instances:
         assert len(instance.labels) == 1, f'Initial Instance Labels Must Be Single Instead {len(instance.labels)}!'
         instance_label = instance.labels[0]
-        logicx_hash = LogicX.hash(instance.logicx)
-        if logicx_hash not in heterogeneous_instances:
-            heterogeneous_instances[logicx_hash] = instance
-        else:
-            heterogeneous_instances[logicx_hash].insert_label(instance_label)
+        logicx_skeleton = LogicX.skeletonize(instance.logicx)
+        logicx_skeleton_hash = LogicX.hash(logicx_skeleton)
+        instance = 
+        instance, instance_uniques = heterogeneous_instances.get(logicx_skeleton_hash, (, [instance.unique]))
+        heterogeneous_instances[logicx_skeleton_hash]
     logger.info(f'Total Heterogeneous Instances: {len(heterogeneous_instances)}')
 
     instances: list[Instance] = list()
