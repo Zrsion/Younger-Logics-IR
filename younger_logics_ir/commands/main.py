@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2024-12-10 09:02:33
+# Last Modified time: 2024-12-30 17:06:54
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -18,7 +18,7 @@ import click
 
 from younger_logics_ir.commands.create import create
 # from younger_logics_ir.commands.update import update
-# from younger_logics_ir.commands.output import output
+from younger_logics_ir.commands.output import output
 
 
 @click.group(name='younger-logics-ir')
@@ -28,7 +28,7 @@ def main():
 
 main.add_command(create, name='create')
 # main.add_command(update, name='update')
-# main.add_command(output, name='output')
+main.add_command(output, name='output')
 
 
 if __name__ == '__main__':

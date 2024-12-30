@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2024-12-30 17:02:16
+# Last Modified time: 2024-12-30 17:06:25
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -42,3 +42,7 @@ def output_filter(
     from younger_logics_ir.scripts.bootstrap import filter
 
     filter.main(load_dirpath, save_dirpath, opset_version=opset_version, worker_number=worker_number)
+
+@output.command(name='clean')
+def output_clean():
+    pass
