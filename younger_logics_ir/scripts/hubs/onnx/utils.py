@@ -62,7 +62,7 @@ def get_onnx_hub_model_infos() -> list[dict[str, Any]]:
     for task in task2table:
         task2table[task] = extract_possible_tables_from_readme_string("\n".join(task2table[task]))
 
-    name2task = {}
+    dir2task = {}
     for task in task2table:
         for table in task2table[task]:  
             for i in range(len(table["rows"])):
@@ -70,7 +70,7 @@ def get_onnx_hub_model_infos() -> list[dict[str, Any]]:
                 pattern = r'\[(.*)\]\((validated/.*)\)'
                 match = re.search(pattern, model_class)
                 if match:
-                    name2task[match.group(1)] = task
+                    dir2task[match.group(2)] = task
 
     tasks = ["Computer_Vision", "Generative_AI", "Graph_Machine_Learning", "Natural_Language_Processing"]
     authors = ["timm", "torch_hub", "torchvision", "transformers", "graph_convolutions"]
@@ -96,7 +96,7 @@ def get_onnx_hub_model_infos() -> list[dict[str, Any]]:
                         author = authors[i]
                 second_path = second_path.replace(f"_{author}", "")
                 opset = second_path.split("_")[-1]
-                model_id = author + "/" +second_path.replace(f"_{opset}", "")
+                model_id = author + "/" + item["path"].split("/")[-1].strip(".onnx")
                 model_infos.append(
                     dict(model_id=model_id, 
                         task=task,
@@ -105,16 +105,17 @@ def get_onnx_hub_model_infos() -> list[dict[str, Any]]:
                         )
                 )
             elif task == "validated":
-                onnx_name = item["path"].split("/")[-1]
-                for name in name2task:
-                    if name.lower() in onnx_name.lower():   
+                for dir in dir2task:
+                    dir1 = dir if dir[-1] == "/" else dir + "/"
+                    if dir1 in item["path"]:
+                        model_id = "onnx/" + item["path"].split("/")[-1].strip(".onnx")
                         model_infos.append(
-                            dict(model_id=onnx_name.strip(".onnx"), 
-                                task=name2task[name],
+                            dict(model_id=model_id, 
+                                task=dir2task[dir],
                                 opset=-1,
                                 url="https://github.com/onnx/models/raw/main/" + item["path"]
                                 )
-                        )   
+                        )
 
     return model_infos
 
