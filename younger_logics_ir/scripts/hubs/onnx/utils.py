@@ -3,10 +3,10 @@
 
 ########################################################################
 # Created time: 2024-12-10 11:10:19
-# Author: Jason Young (杨郑鑫).
+# Author: Jason Young (杨郑鑫) and Yikang Yang (杨怡康).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2024-12-29 20:34:10
+# Last Modified time: 2024-12-31 11:16:36
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -14,16 +14,18 @@
 ########################################################################
 
 
-from onnx import hub
-from typing import Any
-import requests
 import re
+import requests
+
+from typing import Any
+
 from younger.commons.string import extract_possible_tables_from_readme_string
+
 
 def get_onnx_hub_model_infos() -> list[dict[str, Any]]:
     response = requests.get("https://github.com/onnx/models/raw/main/README.md")
     if response.status_code == 200:
-        readme_data = response.text
+        readme = response.text
     else:
         raise Exception("Failed to get README.md from onnx/models")
 
@@ -43,7 +45,7 @@ def get_onnx_hub_model_infos() -> list[dict[str, Any]]:
 
     task2table = {}
 
-    lines = readme_data.split("\n")
+    lines = readme.split("\n")
     flag = False
     for line in lines:
         if line.startswith("#"):
@@ -59,6 +61,7 @@ def get_onnx_hub_model_infos() -> list[dict[str, Any]]:
         else:
             if flag:
                 task2table[task].append(line)
+
     for task in task2table:
         task2table[task] = extract_possible_tables_from_readme_string("\n".join(task2table[task]))
 
@@ -82,7 +85,7 @@ def get_onnx_hub_model_infos() -> list[dict[str, Any]]:
     else:
         raise Exception("Failed to get tree data from onnx/models")
 
-    model_infos = list()
+    model_infos: list[dict[str, Any]] = list()
     for item in tree_data:
         if item["path"].endswith(".onnx"):
             task = item["path"].split("/")[0]
@@ -98,23 +101,25 @@ def get_onnx_hub_model_infos() -> list[dict[str, Any]]:
                 opset = second_path.split("_")[-1]
                 model_id = author + "/" + item["path"].split("/")[-1].strip(".onnx")
                 model_infos.append(
-                    dict(model_id=model_id, 
+                    dict(
+                        model_id=model_id, 
                         task=task,
                         opset=int(opset.replace("Opset", "")),
                         url="https://github.com/onnx/models/raw/main/" + item["path"]
-                        )
+                    )
                 )
             elif task == "validated":
                 for dir in dir2task:
                     dir1 = dir if dir[-1] == "/" else dir + "/"
                     if dir1 in item["path"]:
-                        model_id = "onnx/" + item["path"].split("/")[-1].strip(".onnx")
+                        model_id = "official/" + item["path"].split("/")[-1].strip(".onnx")
                         model_infos.append(
-                            dict(model_id=model_id, 
+                            dict(
+                                model_id=model_id, 
                                 task=dir2task[dir],
-                                opset=-1,
+                                opset=None,
                                 url="https://github.com/onnx/models/raw/main/" + item["path"]
-                                )
+                            )
                         )
 
     return model_infos

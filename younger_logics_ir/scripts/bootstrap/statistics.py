@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2024-12-31 10:55:53
+# Last Modified time: 2024-12-31 11:10:46
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -23,6 +23,7 @@ from younger.commons.io import save_json
 from younger.commons.logging import logger
 
 from younger_logics_ir.modules import Dataset, Instance, LogicX
+
 
 def statistics_graph(graph: networkx.DiGraph) -> dict[str, dict[str, int] | int]:
     graph_statistics = dict(
@@ -64,7 +65,7 @@ def statistics_logicxs(load_dirpath: pathlib.Path, save_dirpath: pathlib.Path, p
     logger.info(f'Statistics Saved into: {statistics_filepath}')
 
 
-def main(load_dirpath: pathlib.Path, save_dirpath: pathlib.Path, granularity: Literal['Instance', 'LogicX'], plot: bool = False, worker_number: int = 4):
+def main(load_dirpath: pathlib.Path, save_dirpath: pathlib.Path, granularity: Literal['Instance', 'LogicX'], plot: bool = False):
     if granularity == 'Instance':
         statistics_instances(load_dirpath, save_dirpath, plot=plot)
 
