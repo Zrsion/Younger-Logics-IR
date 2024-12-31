@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2024-12-31 11:10:46
+# Last Modified time: 2024-12-31 13:42:02
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -15,31 +15,16 @@
 
 
 import pathlib
-import networkx
 
-from typing import Literal
+from typing import Any, Literal
 
-from younger.commons.io import save_json
+from younger.commons.io import save_json, get_object_with_sorted_dict
 from younger.commons.logging import logger
 
 from younger_logics_ir.modules import Dataset, Instance, LogicX
 
 
-def statistics_graph(graph: networkx.DiGraph) -> dict[str, dict[str, int] | int]:
-    graph_statistics = dict(
-        num_operators = dict(),
-        num_node = graph.number_of_nodes(),
-        num_edge = graph.number_of_edges(),
-    )
-
-    for node_id in graph.nodes:
-        node_features = graph.nodes[node_id]['features']
-        node_identifier = Network.get_node_identifier_from_features(node_features)
-        graph_statistics['num_operators'][node_identifier] = graph_statistics['num_operators'].get(node_identifier, 0) + 1
-    return graph_statistics
-
-
-def statistics_instances(load_dirpath: pathlib.Path, save_dirpath: pathlib.Path, plot: bool = False):
+def statistics_instances(load_dirpath: pathlib.Path, save_dirpath: pathlib.Path):
     """
     .. todo::
         In future, please implement this method.
@@ -48,26 +33,62 @@ def statistics_instances(load_dirpath: pathlib.Path, save_dirpath: pathlib.Path,
     :type load_dirpath: pathlib.Path
     :param save_dirpath: _description_
     :type save_dirpath: pathlib.Path
-    :param plot: _description_, defaults to False
-    :type plot: bool, optional
     """
     pass
 
 
-def statistics_logicxs(load_dirpath: pathlib.Path, save_dirpath: pathlib.Path, plot: bool = False):
-    statistics = dict()
+def statistics_logicxs(load_dirpath: pathlib.Path, save_dirpath: pathlib.Path):
     logicxs = Dataset.drain_logicxs(load_dirpath)
+
+    ne_with_max_non = dict(
+        number_of_nodes=0,
+        number_of_edges=0
+    ) # The (number of nodes, number of edge) with max number of nodes.
+    ne_with_max_noe = dict(
+        number_of_nodes=0,
+        number_of_edges=0
+    ) # The (number of nodes, number of edge) with max number of edges.
+    operator_occurence: dict[str, int] = dict()
+    detailed_statistics: dict[str, Any] = dict()
     for logicx in logicxs:
-        pass
+        logicx_hash = LogicX.hash(logicx)
+        non = logicx.dag.number_of_nodes()
+        noe = logicx.dag.number_of_edges()
+        if (ne_with_max_non['number_of_nodes'] < non) or (ne_with_max_non['number_of_nodes'] == non and ne_with_max_non['number_of_edges'] < noe):
+            ne_with_max_non = (non, noe)
+        if (ne_with_max_noe['number_of_edges'] < noe) or (ne_with_max_noe['number_of_edges'] == noe and ne_with_max_noe['number_of_nodes'] < non):
+            ne_with_max_noe = (non, noe)
+
+        this_operator_occurence: dict[str, int] = dict()
+        for operator_node_index in logicx.node_indices('operator'):
+            tuid = logicx.node_tuid_feature(operator_node_index)
+            operator_occurence[tuid] = operator_occurence.get(tuid, 0) + 1
+            this_operator_occurence[tuid] = this_operator_occurence.get(tuid, 0) + 1
+
+        this_statistics = dict(
+            number_of_nodes = non,
+            number_of_edges = noe,
+            operator_occurence = get_object_with_sorted_dict(this_operator_occurence),
+        )
+        detailed_statistics[logicx_hash] = this_statistics
+    
+    statistics = dict(
+        detail = detailed_statistics,
+        overall = dict(
+            ne_with_max_non = ne_with_max_non,
+            ne_with_max_noe = ne_with_max_noe,
+            operator_occurence = get_object_with_sorted_dict(operator_occurence),
+        )
+    )
 
     statistics_filepath = save_dirpath.joinpath(f'statistics_logicxs.json')
     save_json(statistics, statistics_filepath)
     logger.info(f'Statistics Saved into: {statistics_filepath}')
 
 
-def main(load_dirpath: pathlib.Path, save_dirpath: pathlib.Path, granularity: Literal['Instance', 'LogicX'], plot: bool = False):
+def main(load_dirpath: pathlib.Path, save_dirpath: pathlib.Path, granularity: Literal['Instance', 'LogicX']):
     if granularity == 'Instance':
-        statistics_instances(load_dirpath, save_dirpath, plot=plot)
+        statistics_instances(load_dirpath, save_dirpath)
 
     if granularity == 'LogicX':
-        statistics_logicxs(load_dirpath, save_dirpath, plot=plot)
+        statistics_logicxs(load_dirpath, save_dirpath)

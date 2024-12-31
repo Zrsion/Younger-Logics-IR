@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2024-12-31 08:55:20
+# Last Modified time: 2024-12-31 12:41:44
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -119,6 +119,11 @@ class LogicX(object):
                 yield node_index
             else:
                 continue
+
+    def edge_indices(self) -> Generator[tuple[str, str], None, None]:
+        assert self.valid, f'\"LogicX\" is invalid!'
+        for edge_u_index, edge_v_index in self._dag.edges:
+            yield (edge_u_index, edge_v_index)
 
     @property
     def input_indices(self) -> Generator[str, None, None]:
