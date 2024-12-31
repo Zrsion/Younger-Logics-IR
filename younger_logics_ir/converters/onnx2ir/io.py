@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2024-12-17 10:21:42
+# Last Modified time: 2024-12-31 23:17:45
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -18,12 +18,8 @@ import sys
 import onnx
 import pathlib
 
-from onnx import version_converter
-
 from younger.commons.io import create_dir
 from younger.commons.logging import logger
-
-from younger_logics_ir.commons.constants import ONNX
 
 
 def check_model(model_handler: onnx.ModelProto | pathlib.Path) -> bool:
@@ -70,8 +66,3 @@ def save_model(model: onnx.ModelProto, model_filepath: pathlib.Path) -> None:
     create_dir(model_filepath.parent)
     onnx.save(model, model_filepath)
     return
-
-
-def clean_model(model: onnx.ModelProto) -> onnx.ModelProto:
-    model = version_converter.convert_version(model, ONNX.OPSetVersions[-1])
-    return model

@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2024-12-31 08:34:03
+# Last Modified time: 2025-01-01 00:10:15
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -29,7 +29,6 @@ class Instance(object):
     _meta_filename = 'meta'
     _logicx_filename = 'logicx.bin'
     _labels_filename = 'labels.lbl'
-    _unique_filename = 'unique.pln'
     def __init__(self):
         self._meta: Meta = Meta(fresh_checker=self.fresh_checker)
         self._logicx: LogicX = LogicX()

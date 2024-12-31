@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2024-12-30 21:30:30
+# Last Modified time: 2024-12-31 23:42:06
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -283,6 +283,7 @@ class Implementation(object):
 
     def setup_performances(self, performances: dict[Benchmark, dict[Evaluation, Any]] | None) -> None:
         self._performances = dict()
+        performances = performances or dict()
         for benchmark, evaluation2performance in performances.items():
             for evaluation, performance in evaluation2performance.items():
                 self.insert_performance(benchmark, evaluation, performance)

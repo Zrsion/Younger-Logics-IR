@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2024-12-31 12:41:44
+# Last Modified time: 2025-01-01 00:09:11
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -67,19 +67,19 @@ class LogicX(object):
 
     def load(self, logicx_filepath: pathlib.Path) -> None:
         assert logicx_filepath.is_file(), f'There is no \"LogicX\" can be loaded from the specified path \"{logicx_filepath.absolute()}\".'
-        sdag = self.__class__.saves_dag(self._dag)
-        ssrc = saves_pickle(self._src)
-        srelationship = saves_pickle(self._relationship)
-        save_pickle((sdag, ssrc, srelationship), logicx_filepath)
-        return 
-
-    def save(self, logicx_filepath: pathlib.Path) -> None:
-        assert not logicx_filepath.is_file(), f'\"LogicX\" can not be saved into the specified path \"{logicx_filepath.absolute()}\".'
         (ldag, lsrc, lrelationship) = load_pickle(logicx_filepath)
         self._relationship = load_pickle(lrelationship)
         self._src = loads_pickle(lsrc)
         self._dag = self.__class__.loads_dag(ldag)
         return
+
+    def save(self, logicx_filepath: pathlib.Path) -> None:
+        assert not logicx_filepath.is_file(), f'\"LogicX\" can not be saved into the specified path \"{logicx_filepath.absolute()}\".'
+        sdag = self.__class__.saves_dag(self._dag)
+        ssrc = saves_pickle(self._src)
+        srelationship = saves_pickle(self._relationship)
+        save_pickle((sdag, ssrc, srelationship), logicx_filepath)
+        return 
 
     def node_features(self, node_index: str) -> dict[str, str | dict]:
         """
@@ -262,7 +262,6 @@ class LogicX(object):
         :return: _description_
         :rtype: str
         """
-        assert logicx.standard, f'\"LogicX\" is not standardized!'
         return networkx.weisfeiler_lehman_graph_hash(logicx.dag, edge_attr=None, node_attr='node_tuid', iterations=3, digest_size=16)
 
     @classmethod
@@ -276,7 +275,6 @@ class LogicX(object):
         :return: _description_
         :rtype: str
         """
-        assert logicx.standard, f'\"LogicX\" is not standardized!'
         return hash_string(cls.saves_dag(logicx.dag))
 
     @classmethod

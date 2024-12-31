@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2024-12-31 08:51:17
+# Last Modified time: 2024-12-31 23:17:24
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -958,7 +958,7 @@ def trans_graph_proto(ox_graph: onnx.GraphProto, depth: int | None = None, const
         node_attr = trans_node_proto(
             node,
             opset_import=opset_import,
-            trans_graph_proto=partial(
+            trans_graph_proto_method=partial(
                 trans_graph_proto,
                 depth=depth+1,
                 constant_names=constant_names,
