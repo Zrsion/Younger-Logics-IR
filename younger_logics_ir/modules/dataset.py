@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2024-12-30 21:31:51
+# Last Modified time: 2024-12-31 09:22:39
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -23,7 +23,7 @@ from younger.commons.logging import logger
 from younger.commons.version import semantic_release, str_to_sem
 
 from younger_logics_ir.modules.stamp import Stamp
-from younger_logics_ir.modules.instance import Instance
+from younger_logics_ir.modules.instance import Instance, LogicX
 
 
 class Dataset(object):
@@ -290,9 +290,64 @@ class Dataset(object):
                 instance_dirpath = instances_dirpath.joinpath(f'{instance_unique}')
                 try:
                     progress_bar.set_description(f'Flush Instance[S]: {instance_unique}')
-                    instance.save(instance, instance_dirpath)
+                    instance.save(instance_dirpath)
                 except Exception as exception:
                     progress_bar.set_description(f'Flush Instance[F]: {instance_unique}')
+                    if strict:
+                        raise exception
+                    else:
+                        continue
+
+                progress_bar.update(1)
+
+    @classmethod
+    def drain_logicxs(cls, logicxs_dirpath: pathlib.Path, strict: bool = False) -> list[LogicX]:
+        """
+
+        :param logicxs_dirpath: _description_
+        :type logicxs_dirpath: pathlib.Path
+        :param strict: _description_, defaults to False
+        :type strict: bool, optional
+
+        :raises exception: _description_
+
+        :return: _description_
+        :rtype: list[LogicX]
+        """
+
+        logicxs = list()
+        logger.info(f' = [YL-IR] = Draining LogicXs @ {logicxs_dirpath}...')
+        logicx_dirpaths = sorted(logicxs_dirpath.iterdir())
+        with tqdm.tqdm(total=len(logicx_dirpaths), desc='Drain Instance') as progress_bar:
+            for index, logicx_dirpath in enumerate(logicx_dirpaths, start=1):
+                logicx = LogicX()
+                try:
+                    progress_bar.set_description(f'Drain LogicX[S]: {logicx_dirpath.name}')
+                    logicx.load(logicx_dirpath)
+                except Exception as exception:
+                    progress_bar.set_description(f'Drain LogicX[F]: {logicx_dirpath.name}')
+                    if strict:
+                        raise exception
+                    else:
+                        continue
+                logicxs.append(logicx)
+                progress_bar.update(1)
+
+        return logicxs
+
+    @classmethod
+    def flush_logicxs(cls, logicxs: list[Instance], logicxs_dirpath: pathlib.Path, strict: bool = False) -> None:
+
+        logger.info(f' = [YL-IR] = Flushing LogicX @ {logicxs_dirpath}...')
+        with tqdm.tqdm(total=len(logicxs), desc='Flush LogicX') as progress_bar:
+            for index, logicx in enumerate(logicxs, start=1):
+                logicx_unique = LogicX.hash(logicx)
+                logicx_dirpath = logicxs_dirpath.joinpath(f'{logicx_unique}')
+                try:
+                    progress_bar.set_description(f'Flush LogicX[S]: {logicx_unique}')
+                    logicx.save(logicx_dirpath)
+                except Exception as exception:
+                    progress_bar.set_description(f'Flush LogicX[F]: {logicx_unique}')
                     if strict:
                         raise exception
                     else:

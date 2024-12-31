@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2024-12-30 22:45:27
+# Last Modified time: 2024-12-31 09:52:57
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -16,52 +16,41 @@
 
 import tqdm
 import pathlib
-import multiprocessing
 
+from younger.commons.io import save_json
 from younger.commons.logging import logger
 
-from younger_logics_ir.modules import Dataset, Instance, LogicX, Origin
+from younger_logics_ir.modules import Dataset, LogicX
 
 
-def standardize_instance(parameter: tuple[str, int]) -> tuple[Origin, Instance, list[Instance], bool]:
-    path, opset_version = parameter
-    instance = Instance()
-    instance.load(path)
-
-    if opset_version is not None and opset_version != instance.logicx.dag.graph['opset_import']:
-        origin, (instance, instance_sods), valid = (instance.origin, (Instance(), list()), False)
-    else:
-        origin, (instance, instance_sods), valid = (instance.origin, Instance.standardize(instance), True)
-
-    return origin, instance, instance_sods, valid
-
-
-def main(load_dirpath: pathlib.Path, save_dirpath: pathlib.Path, worker_number: int = 4):
+def main(load_dirpath: pathlib.Path, save_dirpath: pathlib.Path):
     logger.info(f'Scanning Instances Directory Path: {load_dirpath}')
     instances = Dataset.drain_instances(load_dirpath)
-    logger.info(f'Total Instances To Be Filtered: {len(instances)}')
+    logger.info(f'Total Instances To Be Cleaned: {len(instances)}')
 
-    logger.info(f'Cleaning Instances ...')
-    heterogeneous_instances: dict[str, (Instance)] = dict()
-    for instance in instances:
-        assert len(instance.labels) == 1, f'Initial Instance Labels Must Be Single Instead {len(instance.labels)}!'
-        instance_label = instance.labels[0]
-        logicx_skeleton = LogicX.skeletonize(instance.logicx)
-        logicx_skeleton_hash = LogicX.hash(logicx_skeleton)
-        instance = 
-        instance, instance_uniques = heterogeneous_instances.get(logicx_skeleton_hash, (, [instance.unique]))
-        heterogeneous_instances[logicx_skeleton_hash]
-    logger.info(f'Total Heterogeneous Instances: {len(heterogeneous_instances)}')
+    logger.info(f'Cleaning Instances to LogicX ...')
+    hash2logicx: dict[str, LogicX] = dict() # Topology Hash -> LogicX
+    hash2detail: dict[str, list[str]] = dict() # Topology Hash -> list[Instance]
+    with tqdm.tqdm(total=len(instances), desc='Clean Intances') as progress_bar:
+        for instance in instances:
+            logicx_skeleton = LogicX.skeletonize(instance.logicx)
+            logicx_skeleton_hash = LogicX.hash(logicx_skeleton)
+            hash2logicx[logicx_skeleton_hash] = hash2logicx.get(logicx_skeleton_hash, logicx_skeleton)
+            hash2detail[logicx_skeleton_hash] = hash2detail.get(logicx_skeleton_hash, list()).append(instance.unique)
+            progress_bar.update(1)
+    logger.info(f'Total Heterogeneous LogicX: {len(hash2logicx)}')
 
-    instances: list[Instance] = list()
-    with multiprocessing.Pool(worker_number) as pool:
-        with tqdm.tqdm(total=len(parameters), desc='Filtering') as progress_bar:
-            for index, (origin, instance, instance_sods, valid) in enumerate(pool.imap_unordered(standardize_instance, parameters), start=1):
-                progress_bar.set_postfix({f'Current Model ID': f'{origin.hub}/{origin.owner}/{origin.name}'})
-                progress_bar.update(1)
-                if valid:
-                    instances.append(instance)
-                    instances.extend(instance_sods)
-    logger.info(f'Total Instances Filtered: {len(instances)}')
-    Dataset.flush_instances(instances, save_dirpath)
+    details_filepath = save_dirpath.joinpath('details.json')
+    logger.info(f'Saving Cleaned Details ...')
+    save_json(hash2detail, details_filepath, indent=2)
+    logger.info(f'Done')
+
+    logicxs_dirpath = save_dirpath.joinpath('logicxs')
+    logger.info(f'Saving Cleaned LogicXs ...')
+    with tqdm.tqdm(total=len(hash2logicx), desc='Save LogicX') as progress_bar:
+        for logicx_skeleton_hash, logicx_skeleton in hash2logicx.items():
+            logicx_skeleton.save(logicxs_dirpath.joinpath(logicx_skeleton_hash))
+            progress_bar.update(1)
+    logger.info(f'Done')
+
     logger.info(f'Finished')

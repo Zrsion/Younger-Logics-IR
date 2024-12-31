@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2024-12-30 11:15:13
+# Last Modified time: 2024-12-31 11:21:09
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -150,8 +150,8 @@ def main(
                 instance.insert_label(
                     Implementation(
                         origin=Origin(YLIROriginHub.ONNX, model_owner, model_name),
-                        like=model_info['likes'],
-                        download=model_info['downloadsAllTime'],
+                        like=model_info.get('likes', None),
+                        download=model_info.get('downloadsAllTime', None),
                     )
                 )
                 instance.save(instances_dirpath.joinpath(instance.unique))

@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2024-12-30 22:39:52
+# Last Modified time: 2024-12-31 08:51:17
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -877,7 +877,7 @@ def trans_graph_proto(ox_graph: onnx.GraphProto, depth: int | None = None, const
         number_of_this_type_node_value = nx_graph.graph.get(number_of_this_type_node_key, 0)
         node_index = f'{ox_graph.name}-{depth}-{node_type}-{number_of_this_type_node_value}'
         nx_graph.graph[number_of_this_type_node_key] = number_of_this_type_node_value + 1
-        nx_graph.add_node(node_index, node_type=node_type, node_name=node_name, node_attr=node_attr, node_tuid=node_tuid)
+        nx_graph.add_node(node_index, node_tuid=node_tuid, node_type=node_type, node_name=node_name, node_attr=node_attr)
         return node_index
 
     def add_edge(tail_index: str, head_index: str, emit_index: int, trap_index: int) -> None:

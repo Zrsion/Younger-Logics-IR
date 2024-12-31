@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2024-12-30 22:40:08
+# Last Modified time: 2024-12-31 12:41:44
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -96,13 +96,21 @@ class LogicX(object):
         assert self.valid, f'\"LogicX\" is invalid!'
         return self._dag.nodes[node_index]
 
+    def node_tuid_feature(self, node_index: str) -> str:
+        assert self.valid, f'\"LogicX\" is invalid!'
+        return self._dag.nodes[node_index]['node_tuid']
+
     def node_type_feature(self, node_index: str) -> str:
         assert self.valid, f'\"LogicX\" is invalid!'
         return self._dag.nodes[node_index]['node_type']
 
-    def node_attr_feature(self, node_index: str) -> dict:
+    def node_name_feature(self, node_index: str) -> str | None:
         assert self.valid, f'\"LogicX\" is invalid!'
-        return self._dag.nodes[node_index]['node_attr']
+        return self._dag.nodes[node_index].get('node_name', None)
+
+    def node_attr_feature(self, node_index: str) -> dict | None:
+        assert self.valid, f'\"LogicX\" is invalid!'
+        return self._dag.nodes[node_index].get('node_attr', None)
 
     def node_indices(self, node_type: Literal['input', 'output', 'operator', 'outer']) -> Generator[str, None, None]:
         assert self.valid, f'\"LogicX\" is invalid!'
@@ -111,6 +119,11 @@ class LogicX(object):
                 yield node_index
             else:
                 continue
+
+    def edge_indices(self) -> Generator[tuple[str, str], None, None]:
+        assert self.valid, f'\"LogicX\" is invalid!'
+        for edge_u_index, edge_v_index in self._dag.edges:
+            yield (edge_u_index, edge_v_index)
 
     @property
     def input_indices(self) -> Generator[str, None, None]:
@@ -230,7 +243,7 @@ class LogicX(object):
         src = logicx.src
         dag = networkx.DiGraph()
         for node_index in logicx.dag.nodes():
-            dag.add_node(node_index, node_tuid=logicx.dag.nodes[node_index]['node_tuid'])
+            dag.add_node(node_index, node_tuid=logicx.node_tuid_feature(node_index), node_type=logicx.node_type_feature(node_index))
 
         for edge_u_index, edge_v_index in logicx.dag.edges():
             dag.add_edge(edge_u_index, edge_v_index)
