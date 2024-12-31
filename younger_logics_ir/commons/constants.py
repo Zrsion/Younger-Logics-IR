@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2024-12-27 13:37:40
+# Last Modified time: 2024-12-31 16:45:29
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -44,6 +44,7 @@ class YLIR_ORIGIN_HUB(Constant):
         self.HUGGINGFACE = 'HuggingFace'
         self.ONNX = 'ONNX'
         self.TORCH = 'Torch'
+        self.NAS = 'NAS'
 
 YLIROriginHub = YLIR_ORIGIN_HUB()
 YLIROriginHub.initialize()
