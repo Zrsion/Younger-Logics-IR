@@ -1,0 +1,25 @@
+# NAS-Bench-101 to YLIR
+This project is based on the "nasbench_keras" repository by lienching (https://github.com/lienching/nasbench_keras), with modifications for converting NAS-Bench-101 models to YLIR instances.
+
+NAS-Bench-101 official repository: https://github.com/google-research/nasbench
+
+To run this project, you need to have the following dependencies installed:
+
+- **Python** version >= 3.11
+- **TensorFlow** version == 2.15
+
+First, install Younger-Logics-IR.
+```bash
+pip install younger-logics-ir
+```
+
+Next, install `nasbench_keras`.
+```bash
+git clone https://github.com/Yangs-AI/Younger-Logics-IR.git
+cd Younger-Logics-IR/third_parties/NASB/NAS-Bench-101
+pip install -e .
+```
+
+After installing the required packages, you can run the conversion code `convert.py`.
+
+The `model-infos-path` must be set to `NAS-Bench-101_Model_Infos.json`. The `NAS-Bench-101_Model_Infos.json` can be generated using the official NASBench101 code.
