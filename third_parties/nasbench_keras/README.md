@@ -26,4 +26,6 @@ pip install -e .
 
 After installing the required packages, you can run the conversion code `convert2dag.py`.
 
+The `models-path` must be set to `path/to/generated_graphs.json`. The `generated_graphs.json` can be generated using the official NASBench101 code.
+
 
