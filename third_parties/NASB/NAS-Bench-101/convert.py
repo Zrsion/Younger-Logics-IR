@@ -6,7 +6,7 @@
 # Author: Luzhou Peng (彭路洲) & Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2025-01-01 17:35:22
+# Last Modified time: 2025-01-01 18:07:12
 # Copyright (c) 2025 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -108,37 +108,37 @@ def convert_pipeline(params):
 
     # Transfer numerically-coded operations to layers (check base_ops.py)
     labels = (['input'] + [config['available_ops'][l] for l in labels[1:-1]] + ['output'])
-    # try:
-    # Module graph
-    spec = ModelSpec(matrix, labels, data_format='channels_first')
+    try:
+        # Module graph
+        spec = ModelSpec(matrix, labels, data_format='channels_first')
 
-    # Create module
-    features = tf.keras.layers.Input((3,224,224), 1)
-    net_outputs = build_keras_model(spec, features, labels, config)
-    net = tf.keras.Model(inputs=features, outputs=net_outputs)
+        # Create module
+        features = tf.keras.layers.Input((3,224,224), 1)
+        net_outputs = build_keras_model(spec, features, labels, config)
+        net = tf.keras.Model(inputs=features, outputs=net_outputs)
 
-    # Save the module
-    net.save(keras_model_filepath)
+        # Save the module
+        net.save(keras_model_filepath)
 
-    # Convert the module to ONNX
-    onnx_model = tf2onnx_main_export(keras_model_filepath, onnx_model_filepath, opset, 'keras')
+        # Convert the module to ONNX
+        onnx_model = tf2onnx_main_export(keras_model_filepath, onnx_model_filepath, opset, 'keras')
 
-    instance = Instance()
+        instance = Instance()
 
-    # Convert the ONNX model to YLIR instance
-    instance.setup_logicx(convert(onnx_model))
-    instance.insert_label(
-        Implementation(
-            origin = Origin(YLIROriginHub.NAS, 'NAS-Bench-101', model_id)
+        # Convert the ONNX model to YLIR instance
+        instance.setup_logicx(convert(onnx_model))
+        instance.insert_label(
+            Implementation(
+                origin = Origin(YLIROriginHub.NAS, 'NAS-Bench-101', model_id)
+            )
         )
-    )
-    instance.save(instances_dirpath.joinpath(instance.unique))
+        instance.save(instances_dirpath.joinpath(instance.unique))
 
-    keras_model_filepath.unlink(missing_ok=True)
-    # onnx_model_filepath.unlink(missing_ok=True)
-    return True, model_id
-    # except Exception as exception:
-    #     return False, model_id
+        keras_model_filepath.unlink(missing_ok=True)
+        # onnx_model_filepath.unlink(missing_ok=True)
+        return True, model_id
+    except Exception as exception:
+        return False, model_id
 
 
 def get_convert_status_and_last_handled_model_id(sts_cache_dirpath: pathlib.Path, start_index: int, end_index: int) -> tuple[list[dict[str, dict[int, Any]]], str | None]:
