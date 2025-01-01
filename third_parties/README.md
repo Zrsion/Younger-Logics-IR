@@ -4,4 +4,4 @@
 
 Now we have two:
 * Transformers.js
-* Nasbench-101 (For detailed instructions, check out the [README](third_parties/nasbench_keras/README.md).)
+* Nasbench-101 (For detailed instructions, check out the [README](./nasbench_keras/README.md).)
