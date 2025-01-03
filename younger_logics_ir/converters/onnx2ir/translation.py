@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2024-12-31 23:17:24
+# Last Modified time: 2025-01-03 22:25:40
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -862,6 +862,7 @@ def trans_graph_proto(ox_graph: onnx.GraphProto, depth: int | None = None, const
         """
         assert node_type in {'input', 'output', 'operator', 'outer'}
         assert isinstance(node_attr, dict) or node_attr is None
+        node_attr = node_attr or dict()
 
         # Topology Unique Identifier (TUID)
         if node_type == 'operator':

@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2025-01-03 17:07:04
+# Last Modified time: 2025-01-03 22:53:23
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -23,8 +23,13 @@ from typing import Literal, Generator
 from younger.commons.io import load_pickle, save_pickle, loads_pickle, saves_pickle, loads_json, saves_json, get_object_with_sorted_dict
 from younger.commons.hash import hash_string
 
+from younger_logics_ir.commons.json import YLIRJSONEncoder, YLIRJSONDecoder
+
 
 class LogicX(object):
+
+    __DAGHead__ = 'YLIR-DAG-'
+
     def __init__(self, src: Literal['onnx', 'core'] | None = None, dag: networkx.DiGraph | None = None):
         assert src in {'onnx', 'core'} or src is None, f'Argument \"src\" must be in {{"onnx", "core"}} instead \"{type(src)}\"!'
         assert isinstance(dag, networkx.DiGraph) or dag is None, f'Argument \"dag\" must be `networkx.DiGraph` instead \"{type(dag)}\"!'
@@ -68,7 +73,7 @@ class LogicX(object):
     def load(self, logicx_filepath: pathlib.Path) -> None:
         assert logicx_filepath.is_file(), f'There is no \"LogicX\" can be loaded from the specified path \"{logicx_filepath.absolute()}\".'
         (ldag, lsrc, lrelationship) = load_pickle(logicx_filepath)
-        self._relationship = load_pickle(lrelationship)
+        self._relationship = loads_pickle(lrelationship)
         self._src = loads_pickle(lsrc)
         self._dag = self.__class__.loads_dag(ldag)
         return
@@ -152,18 +157,28 @@ class LogicX(object):
 
     @classmethod
     def loads_dag(cls, txt: str) -> networkx.DiGraph:
-        dic = loads_json(txt)
+        dic = loads_json(txt, cls=YLIRJSONDecoder)
         dag = cls.loadd_dag(dic)
         return dag
 
     @classmethod
     def saves_dag(cls, dag: networkx.DiGraph) -> str:
         dic = cls.saved_dag(dag)
-        txt = saves_json(dic)
+        txt = saves_json(dic, cls=YLIRJSONEncoder)
         return txt
 
     @classmethod
     def loadd_dag(cls, dic: dict) -> networkx.DiGraph:
+        def str2dag(obj: object) -> object:
+            if isinstance(obj, dict):
+                return {key: str2dag(value) for key, value in obj.items()}
+            elif isinstance(obj, list):
+                return [str2dag(item) for item in obj]
+            elif isinstance(obj, str) and obj.startswith(cls.__DAGHead__):
+                return cls.loads_dag(obj[len(cls.__DAGHead__):])
+            else:
+                return obj
+
         dag = networkx.DiGraph()
 
         dag.graph = dic.get("graph", dict())
@@ -181,11 +196,21 @@ class LogicX(object):
 
     @classmethod
     def saved_dag(cls, dag: networkx.DiGraph) -> dict:
+        def dag2str(obj: object) -> object:
+            if isinstance(obj, dict):
+                return {key: dag2str(value) for key, value in obj.items()}
+            elif isinstance(obj, list):
+                return [dag2str(item) for item in obj]
+            elif isinstance(obj, networkx.DiGraph):
+                return f'{cls.__DAGHead__}{cls.saves_dag(obj)}'
+            else:
+                return obj
+
         dic = dict(
             graph=dag.graph,
             nodes=[
                 dict(
-                    node_features=get_object_with_sorted_dict(node_features),
+                    node_features=get_object_with_sorted_dict(dag2str(node_features)),
                     node_index=node_index,
                 ) for node_index, node_features in sorted(dag.nodes(data=True), key=lambda x: x[0])
             ],
