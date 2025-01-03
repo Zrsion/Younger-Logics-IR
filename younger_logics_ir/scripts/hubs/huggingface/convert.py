@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2025-01-03 15:36:24
+# Last Modified time: 2025-01-03 16:27:33
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -30,12 +30,13 @@ from younger.commons.logging import logger
 
 from younger_logics_ir.modules import Instance, Implementation, Origin
 from younger_logics_ir.converters import convert
+from younger_logics_ir.converters.onnx2ir.io import load_model
 
 from younger_logics_ir.commons.constants import YLIROriginHub
 
 from younger_logics_ir.scripts.commons.utils import get_onnx_opset_versions, get_onnx_model_opset_version
 
-from .utils import get_huggingface_hub_model_storage, get_huggingface_hub_model_siblings, clean_huggingface_hub_model_cache
+from .utils import get_huggingface_hub_model_siblings, clean_huggingface_hub_model_cache
 
 
 def clean_cache(model_id: str, cvt_cache_dirpath: pathlib.Path, ofc_cache_dirpath: pathlib.Path):
@@ -56,7 +57,7 @@ def safe_optimum_export(model_id: str, cvt_cache_dirpath: pathlib.Path, ofc_cach
                 try:
                     if filepath.suffix == '.onnx':
                         instance = Instance()
-                        instance.setup_logicx(convert(onnx.load(filepath)))
+                        instance.setup_logicx(convert(load_model(filename)))
                         this_instances.append(instance)
                     this_status[onnx_opset_version][filename] = 'success'
                 except:
@@ -113,7 +114,7 @@ def safe_keras_export(cvt_cache_dirpath: pathlib.Path, keras_model_path: pathlib
             tf2onnx_main_export(keras_model_path, onnx_model_path, onnx_opset_version, model_type=model_type)
             try:
                 instance = Instance()
-                instance.setup_logicx(convert(onnx.load(onnx_model_path)))
+                instance.setup_logicx(convert(load_model(onnx_model_path)))
                 this_instances.append(instance)
                 this_status[onnx_opset_version] = 'success'
             except Exception as exception:
@@ -172,7 +173,7 @@ def safe_tflite_export(cvt_cache_dirpath: pathlib.Path, tflite_model_path: pathl
             tf2onnx_main_export(tflite_model_path, onnx_model_path, onnx_opset_version, model_type='tflite')
             try:
                 instance = Instance()
-                instance.setup_logicx(convert(onnx.load(onnx_model_path)))
+                instance.setup_logicx(convert(load_model(onnx_model_path)))
                 this_instances.append(instance)
                 this_status[onnx_opset_version] = 'success'
             except Exception as exception:
@@ -213,7 +214,7 @@ def convert_tflite(model_id: str, cvt_cache_dirpath: pathlib.Path, ofc_cache_dir
 def safe_onnx_export(cvt_cache_dirpath: pathlib.Path, onnx_model_path: pathlib.Path, results_queue: multiprocessing.Queue):
     this_status: dict[int, str] = dict()
     this_instances: list[Instance] = list()
-    onnx_model = onnx.load(onnx_model_path)
+    onnx_model = load_model(onnx_model_path)
     onnx_model_opset_version = get_onnx_model_opset_version(onnx_model)
     for onnx_opset_version in get_onnx_opset_versions():
         if onnx_opset_version == onnx_model_opset_version:

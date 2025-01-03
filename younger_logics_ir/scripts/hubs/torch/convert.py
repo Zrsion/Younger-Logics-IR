@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2024-12-31 11:18:42
+# Last Modified time: 2025-01-03 16:28:25
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -27,6 +27,7 @@ from younger.commons.logging import logger
 
 from younger_logics_ir.modules import Instance, Implementation, Origin
 from younger_logics_ir.converters import convert
+from younger_logics_ir.converters.onnx2ir.io import load_model
 from younger_logics_ir.commons.constants import YLIROriginHub
 from younger_logics_ir.scripts.commons.utils import get_onnx_opset_versions
 
@@ -42,7 +43,7 @@ def safe_torch_export(cvt_cache_dirpath: pathlib.Path, model_id: str, results_qu
         onnx_model_path = str(cvt_cache_dirpath.joinpath(f'model_opset_v{onnx_opset_version}.onnx'))
         try:
             torch.onnx.export(model, model_input, onnx_model_path, verbose=True)
-            onnx_model = onnx.load(onnx_model_path)
+            onnx_model = load_model(onnx_model_path)
             try:
                 instance = Instance()
                 instance.setup_logicx(convert(onnx_model))

@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2024-12-31 23:17:45
+# Last Modified time: 2025-01-03 16:55:34
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -49,7 +49,10 @@ def check_model(model_handler: onnx.ModelProto | pathlib.Path) -> bool:
         if isinstance(model_handler, pathlib.Path):
             return check_with_external()
     except onnx.checker.ValidationError as check_error:
-        logger.warn(f'The ONNX Model is invalid: {check_error}')
+        """
+        Missing of external data file also can result in this error.
+        """
+        logger.warning(f'The ONNX Model is invalid: {check_error}')
         check_result = False
     except Exception as exception:
         logger.error(f'An error occurred while checking the ONNX model: {exception}')

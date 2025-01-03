@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2024-12-17 10:30:26
+# Last Modified time: 2025-01-03 16:56:04
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -22,13 +22,20 @@ from .translation import trans_model_proto
 
 
 def convert_onnx_to_ir(model_handler: onnx.ModelProto) -> networkx.DiGraph:
+    """
+    .. note::
+        Do not check the model_handler now, cause a model without external data file can also be loaded.
+        The error should be catched by the callers.
+    """
+
     assert isinstance(model_handler, onnx.ModelProto), f'Argument \"model_handler\" must be an ONNX Model Proto (onnx.ModelProto) instead \"{type(model_handler)}\"!'
-    if check_model(model_handler):
-        dag = trans_model_proto(model_handler, neglect_tensor_values=True)
-    else:
-        """
-        ..TODO::
-            If Check Is Invalid, There Is No model
-        """
-        dag = None
+    # if check_model(model_handler):
+    #     dag = trans_model_proto(model_handler, neglect_tensor_values=True)
+    # else:
+    #     """
+    #     .. todo::
+    #         If Check Is Invalid, There Is No model
+    #     """
+    #     dag = None
+    dag = trans_model_proto(model_handler, neglect_tensor_values=True)
     return dag

@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2025-01-01 00:09:11
+# Last Modified time: 2025-01-03 17:07:04
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -152,15 +152,26 @@ class LogicX(object):
 
     @classmethod
     def loads_dag(cls, txt: str) -> networkx.DiGraph:
-        data = loads_json(txt)
+        dic = loads_json(txt)
+        dag = cls.loadd_dag(dic)
+        return dag
+
+    @classmethod
+    def saves_dag(cls, dag: networkx.DiGraph) -> str:
+        dic = cls.saved_dag(dag)
+        txt = saves_json(dic)
+        return txt
+
+    @classmethod
+    def loadd_dag(cls, dic: dict) -> networkx.DiGraph:
         dag = networkx.DiGraph()
 
-        dag.graph = data.get("graph", dict())
-        for node_data in data['nodes']:
+        dag.graph = dic.get("graph", dict())
+        for node_data in dic['nodes']:
             node_index = node_data['node_index']
             node_features = node_data['node_features']
             dag.add_node(node_index, **node_features)
-        for edge_data in data['edges']:
+        for edge_data in dic['edges']:
             tail_index = edge_data['tail_index']
             head_index = edge_data['head_index']
             edge_features = edge_data['edge_features']
@@ -169,8 +180,8 @@ class LogicX(object):
         return dag
 
     @classmethod
-    def saves_dag(cls, dag: networkx.DiGraph) -> str:
-        data = dict(
+    def saved_dag(cls, dag: networkx.DiGraph) -> dict:
+        dic = dict(
             graph=dag.graph,
             nodes=[
                 dict(
@@ -187,8 +198,7 @@ class LogicX(object):
             ]
         )
 
-        txt = saves_json(data)
-        return txt
+        return dic
 
     @classmethod
     def standardize(cls, logicx: 'LogicX') -> tuple['LogicX', list['LogicX']]:

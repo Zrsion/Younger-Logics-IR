@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2024-12-31 11:21:09
+# Last Modified time: 2025-01-03 16:27:58
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -28,6 +28,7 @@ from younger.commons.download import download
 
 from younger_logics_ir.modules import Instance, Implementation, Origin
 from younger_logics_ir.converters import convert
+from younger_logics_ir.converters.onnx2ir.io import load_model
 from younger_logics_ir.commons.constants import YLIROriginHub
 from younger_logics_ir.scripts.commons.utils import get_onnx_model_opset_version, get_onnx_opset_versions
 
@@ -35,7 +36,7 @@ from younger_logics_ir.scripts.commons.utils import get_onnx_model_opset_version
 def safe_onnx_export(onnx_model_path: str, results_queue: multiprocessing.Queue):
     this_status: dict[int, str] = dict()
     this_instances: list[Instance] = list()
-    onnx_model = onnx.load(onnx_model_path)
+    onnx_model = load_model(onnx_model_path)
     onnx_model_opset_version = get_onnx_model_opset_version(onnx_model)
     for onnx_opset_version in get_onnx_opset_versions():
         if onnx_opset_version == onnx_model_opset_version:
