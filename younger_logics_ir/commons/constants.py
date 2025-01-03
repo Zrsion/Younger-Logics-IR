@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2024-12-31 16:45:29
+# Last Modified time: 2025-01-03 13:28:59
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -41,6 +41,7 @@ YLIRNodeType.freeze()
 
 class YLIR_ORIGIN_HUB(Constant):
     def initialize(self) -> None:
+        self.LOCAL = 'Local'
         self.HUGGINGFACE = 'HuggingFace'
         self.ONNX = 'ONNX'
         self.TORCH = 'Torch'

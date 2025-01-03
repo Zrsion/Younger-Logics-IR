@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2024-12-30 11:33:03
+# Last Modified time: 2025-01-03 15:36:24
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -261,7 +261,7 @@ def convert_onnx(model_id: str, cvt_cache_dirpath: pathlib.Path, ofc_cache_dirpa
     return status, instances
 
 
-def get_model_infos_and_convert_method(model_infos_filepath: pathlib.Path, framework: Literal['optimum', 'onnx', 'keras']) -> tuple[list[dict[str, Any]], Callable[[str, pathlib.Path, pathlib.Path, Literal['cpu', 'cuda']], tuple[dict[str, dict[int, Any] | Literal['system_kill']], list[Instance]]]]:
+def get_model_infos_and_convert_method(model_infos_filepath: pathlib.Path, framework: Literal['optimum', 'onnx', 'keras'], model_size_limit: tuple[int, int]) -> tuple[list[dict[str, Any]], Callable[[str, pathlib.Path, pathlib.Path, Literal['cpu', 'cuda']], tuple[dict[str, dict[int, Any] | Literal['system_kill']], list[Instance]]]]:
     # This is the convert order.
     supported_frameworks: list[str] = ['optimum', 'keras', 'onnx']
     supported_convert_methods: dict[str, Callable[[str, pathlib.Path, pathlib.Path, Literal['cpu', 'cuda']], tuple[dict[str, dict[int, Any] | Literal['system_kill']], list[Instance]]]] = dict(
@@ -280,21 +280,21 @@ def get_model_infos_and_convert_method(model_infos_filepath: pathlib.Path, frame
     model_infos: list[dict[str, Any]] = list()
     for model_info in load_json(model_infos_filepath):
         model_framework = get_model_framework(model_info['tags'])
-        if framework in model_framework:
+        if framework in model_framework and model_size_limit[0] <= model_info['model_storage'] and model_info['model_storage'] <= model_size_limit[1]:
             model_infos.append(model_info)
 
     convert_method = supported_convert_methods[framework]
     return model_infos, convert_method
 
 
-def get_convert_status_and_last_handled_model_id(sts_cache_dirpath: pathlib.Path, framework: Literal['optimum', 'onnx', 'keras']) -> tuple[list[dict[str, dict[int, Any]]], str | None]:
+def get_convert_status_and_last_handled_model_id(sts_cache_dirpath: pathlib.Path, framework: Literal['optimum', 'onnx', 'keras'], model_size_limit: tuple[int, int]) -> tuple[list[dict[str, dict[int, Any]]], str | None]:
     convert_status: dict[str, dict[int, Any]] = list()
-    specific_status_filepath = sts_cache_dirpath.joinpath(f'{framework}.sts')
+    specific_status_filepath = sts_cache_dirpath.joinpath(f'{framework}_{model_size_limit[0]}_{model_size_limit[1]}.sts')
     if specific_status_filepath.is_file():
         with open(specific_status_filepath, 'r') as specific_status_file:
             convert_status: dict[str, dict[int, Any]] = [loads_json(line.strip()) for line in specific_status_file]
 
-    last_handled_filepath = sts_cache_dirpath.joinpath(f'{framework}_last_handled.sts')
+    last_handled_filepath = sts_cache_dirpath.joinpath(f'{framework}_{model_size_limit[0]}_{model_size_limit[1]}_last_handled.sts')
     if last_handled_filepath.is_file():
         with open(last_handled_filepath, 'r') as last_handled_file:
             model_id = last_handled_file.read().strip()
@@ -304,12 +304,12 @@ def get_convert_status_and_last_handled_model_id(sts_cache_dirpath: pathlib.Path
     return convert_status, last_handled_model_id
 
 
-def set_convert_status_last_handled_model_id(sts_cache_dirpath: pathlib.Path, framework: Literal['optimum', 'onnx', 'keras'], convert_status: dict[str, dict[str, Any]], model_id: str):
-    convert_status_filepath = sts_cache_dirpath.joinpath(f'{framework}.sts')
+def set_convert_status_last_handled_model_id(sts_cache_dirpath: pathlib.Path, framework: Literal['optimum', 'onnx', 'keras'], model_size_limit: tuple[int, int], convert_status: dict[str, dict[str, Any]], model_id: str):
+    convert_status_filepath = sts_cache_dirpath.joinpath(f'{framework}_{model_size_limit[0]}_{model_size_limit[1]}.sts')
     with open(convert_status_filepath, 'a') as convert_status_file:
         convert_status_file.write(f'{saves_json((model_id, convert_status))}\n')
 
-    last_handled_filepath = sts_cache_dirpath.joinpath(f'{framework}_last_handled.sts')
+    last_handled_filepath = sts_cache_dirpath.joinpath(f'{framework}_{model_size_limit[0]}_{model_size_limit[1]}_last_handled.sts')
     with open(last_handled_filepath, 'w') as last_handled_file:
         last_handled_file.write(f'{model_id}\n')
 
@@ -319,7 +319,8 @@ def main(
     save_dirpath: pathlib.Path, cache_dirpath: pathlib.Path,
     device: Literal['cpu', 'cuda'] = 'cpu',
     framework: Literal['optimum', 'onnx', 'keras'] = 'optimum',
-    model_size_threshold: int | None = None,
+    model_size_limit_l: int | None = None,
+    model_size_limit_r: int | None = None,
     token: str | None = None,
 ):
     """
@@ -335,8 +336,10 @@ def main(
     :type device: Literal[&#39;cpu&#39;, &#39;cuda&#39;], optional
     :param framework: _description_, defaults to 'optimum'
     :type framework: Literal[&#39;optimum&#39;, &#39;onnx&#39;, &#39;keras&#39;], optional
-    :param model_size_threshold: _description_, defaults to None
-    :type model_size_threshold: int | None, optional
+    :param model_size_limit_l: _description_, defaults to None
+    :type model_size_limit_l: int | None, optional
+    :param model_size_limit_r: _description_, defaults to None
+    :type model_size_limit_r: int | None, optional
     :param token: _description_, defaults to None
     :type token: str | None, optional
 
@@ -357,7 +360,15 @@ def main(
         See: https://github.com/onnx/tensorflow-onnx
     """
 
-    model_infos, convert_method = get_model_infos_and_convert_method(model_infos_filepath, framework)
+    model_size_limit_l = model_size_limit_l or 0
+    logger.info(f'   Model Size Left Limit: {get_human_readable_size_representation(model_size_limit_l)}.')
+
+    model_size_limit_r = model_size_limit_r or 1024 * 1024 * 1024 * 1024
+    logger.info(f'   Model Size Right Limit: {get_human_readable_size_representation(model_size_limit_r)}.')
+
+    model_size_limit = (model_size_limit_l, model_size_limit_r)
+
+    model_infos, convert_method = get_model_infos_and_convert_method(model_infos_filepath, framework, model_size_limit)
 
     # Instances
     instances_dirpath = save_dirpath.joinpath(f'Instances')
@@ -373,14 +384,9 @@ def main(
 
     # Status
     sts_cache_dirpath = cache_dirpath.joinpath(f'Cache-HFSts')
-    convert_status, last_handled_model_id = get_convert_status_and_last_handled_model_id(sts_cache_dirpath, framework)
+    convert_status, last_handled_model_id = get_convert_status_and_last_handled_model_id(sts_cache_dirpath, framework, model_size_limit)
     number_of_converted_models = len(convert_status)
     logger.info(f'-> Previous Converted Models: {number_of_converted_models}')
-
-    if model_size_threshold is None:
-        logger.info(f'   Model Size Threshold: No Limit.')
-    else:
-        logger.info(f'   Model Size Threshold: {get_human_readable_size_representation(model_size_threshold)}.')
 
     if token is not None:
         logger.info(f'-> HuggingFace Token Provided. Now Logging In ...')
@@ -399,23 +405,8 @@ def main(
                 progress_bar.update(1)
                 continue
 
-            try:
-                model_storage = get_huggingface_hub_model_storage(model_id, token=token)
-            except Exception as exception:
-                set_convert_status_last_handled_model_id(sts_cache_dirpath, framework, dict(before_convert='access_deny'), model_id)
-                progress_bar.set_description(f'[E](access_deny) - {model_id}')
-                progress_bar.update(1)
-                continue
-
-            if model_size_threshold is not None:
-                if model_size_threshold < model_storage:
-                    set_convert_status_last_handled_model_id(sts_cache_dirpath, framework, dict(before_convert='oversize'), model_id)
-                    progress_bar.set_description(f'[E](oversize) - {model_id} ({get_human_readable_size_representation(model_storage)})')
-                    progress_bar.update(1)
-                    continue
-
             status, instances = convert_method(model_id, cvt_cache_dirpath, ofc_cache_dirpath, device)
-            set_convert_status_last_handled_model_id(sts_cache_dirpath, framework, status, model_id)
+            set_convert_status_last_handled_model_id(sts_cache_dirpath, framework, model_size_limit, status, model_id)
             clean_cache(model_id, cvt_cache_dirpath, ofc_cache_dirpath)
 
             model_owner, model_name = model_id.split('/')

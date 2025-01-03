@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2024-12-29 17:20:03
+# Last Modified time: 2025-01-03 15:31:21
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -107,7 +107,10 @@ def get_huggingface_hub_model_infos(token: str | None = None) -> Generator[dict[
     with tqdm.tqdm(total=len(model_ids), desc='Retrieve Model') as progress_bar:
         for model_id in model_ids:
             progress_bar.set_description(f'Retrieve Model - {model_id}')
-            yield get_data_from_huggingface_hub_api(f'{models_path}/{model_id}', params=dict(expand=['cardData', 'lastModified', 'likes', 'downloadsAllTime', 'siblings', 'tags']), token=token)
+            model_storage = get_huggingface_hub_model_storage(model_id, token=token)
+            model_info = get_data_from_huggingface_hub_api(f'{models_path}/{model_id}', params=dict(expand=['cardData', 'lastModified', 'likes', 'downloadsAllTime', 'siblings', 'tags']), token=token)
+            model_info['model_storage'] = model_storage
+            yield model_info
             progress_bar.update(1)
     logger.info(f'   Retrieved.')
     logger.info(f' ^ Total = {len(model_infos)}.')
