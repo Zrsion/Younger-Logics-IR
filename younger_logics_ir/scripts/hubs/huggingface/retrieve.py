@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2025-01-05 15:57:33
+# Last Modified time: 2025-01-05 17:37:54
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -38,7 +38,7 @@ def save_huggingface_model_infos(save_dirpath: pathlib.Path, token: str | None =
             svd_model_info_index = cur_model_info_index
         cur_model_info_index += 1
 
-    if number_per_file is not None and len(model_infos_per_file) == number_per_file:
+    if number_per_file is not None and len(model_infos_per_file) != 0:
         save_filepath = save_dirpath.joinpath(f'huggingface_model_infos_{svd_model_info_index}_{cur_model_info_index}.json')
         save_json(model_infos_per_file, save_filepath, indent=2)
         logger.info(f'Total {len(model_infos_per_file)} Model Info Items Saved In: \'{save_filepath}\'.')

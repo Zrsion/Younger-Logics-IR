@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2025-01-05 17:10:40
+# Last Modified time: 2025-01-05 17:42:44
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -108,7 +108,11 @@ def get_all_data_from_huggingface_hub_api(path: str, params: dict | None = None,
 def get_huggingface_hub_model_ids(token: str | None = None) -> Generator[str, None, None]:
     models_path = f'{HUGGINGFACE_HUB_API_ENDPOINT}/models'
     models = get_all_data_from_huggingface_hub_api(models_path, params=dict(sort='lastModified', direction=-1, expand=['lastModified']), token=token)
-    return (model['id'] for model in models)
+    for i, model in enumerate(models):
+        if i== 100:
+            break
+        yield model['id']
+    # return (model['id'] for model in models)
 
 
 def get_huggingface_hub_metric_ids(token: str | None = None) -> list[str]:
@@ -143,10 +147,13 @@ def get_huggingface_hub_model_infos(token: str | None = None, worker_number: int
                 yield model_info
                 progress_bar.update(1)
     else:
+        logger.info(f' - Multiple Worker ({worker_number})')
         model_infos: list[multiprocessing.pool.ApplyResult] = list()
         with multiprocessing.Pool(worker_number) as pool:
+            logger.info(f'   Assign Tasks ...')
             with tqdm.tqdm(total=len(model_ids), desc='Retrieve Model') as progress_bar:
                 for model_id in model_ids:
+                    progress_bar.set_description(f'Retrieve Model - {model_id}')
                     model_info = pool.apply_async(
                         get_one_data_from_huggingface_hub_api,
                         (
@@ -158,9 +165,15 @@ def get_huggingface_hub_model_infos(token: str | None = None, worker_number: int
                         )
                     )
                     model_infos.append(model_info)
+                    progress_bar.update(1)
 
-            for model_info in model_infos:
-                yield model_info.get()
+            logger.info(f'   Get Results ...')
+            with tqdm.tqdm(total=len(model_ids), desc='Retrieve Model') as progress_bar:
+                for model_info in model_infos:
+                    model_info = model_info.get()
+                    progress_bar.set_description(f'Getting - {model_info["id"]}')
+                    yield model_info
+                    progress_bar.update(1)
 
     logger.info(f'   Retrieved.')
     logger.info(f' ^ Total = {len(model_infos)}.')
