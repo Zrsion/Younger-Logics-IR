@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2025-01-06 00:48:17
+# Last Modified time: 2025-01-06 00:52:28
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -198,6 +198,7 @@ def get_huggingface_hub_model_infos(save_dirpath: pathlib.Path, token: str | Non
             with tqdm.tqdm(total=len(model_infos), desc='Retrieve Model') as progress_bar:
                 for model_info in model_infos:
                     model_info = model_info.get()
+                    progress_bar.set_description(f'Retrieve Model - {model_info["id"]}')
                     model_infos_per_file.append(model_info)
                     if number_per_file is not None and len(model_infos_per_file) == number_per_file:
                         save_filepath = save_dirpath.joinpath(f'huggingface_model_infos_{tob_model_info_index}_{cur_model_info_index}.json')
@@ -208,6 +209,7 @@ def get_huggingface_hub_model_infos(save_dirpath: pathlib.Path, token: str | Non
                         save_json(tob_model_info_index, tob_handled_filepath)
                     else:
                         cur_model_info_index += 1
+                    progress_bar.update(1)
 
                 cur_model_info_index -= 1
                 if number_per_file is not None and len(model_infos_per_file) != 0:
@@ -220,7 +222,6 @@ def get_huggingface_hub_model_infos(save_dirpath: pathlib.Path, token: str | Non
 
         logger.info(f'   Retrieved.')
         logger.info(f' ^ Total = {len(model_infos)}.')
-    return len(model_ids) == cur_model_info_index
 
 
 def get_huggingface_hub_metric_infos(save_dirpath: pathlib.Path, token: str | None = None) -> bool:
@@ -230,7 +231,6 @@ def get_huggingface_hub_metric_infos(save_dirpath: pathlib.Path, token: str | No
     save_filepath = save_dirpath.joinpath('huggingface_metric_infos.json')
     save_json(metric_infos, save_filepath, indent=2)
     logger.info(f'Total {len(metric_infos)} Metric Infos. Results Saved In: \'{save_filepath}\'.')
-    return True
 
 
 def get_huggingface_hub_task_infos(save_dirpath: pathlib.Path, token: str | None = None) -> bool:
@@ -240,7 +240,6 @@ def get_huggingface_hub_task_infos(save_dirpath: pathlib.Path, token: str | None
     save_filepath = save_dirpath.joinpath('huggingface_task_infos.json')
     save_json(task_infos, save_filepath, indent=2)
     logger.info(f'Total {len(task_infos)} Tasks Infos. Results Saved In: \'{save_filepath}\'.')
-    return True
 
 
 ####################################################################################################

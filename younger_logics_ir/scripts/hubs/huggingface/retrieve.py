@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2025-01-06 00:41:15
+# Last Modified time: 2025-01-06 00:53:57
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -29,9 +29,13 @@ def save_huggingface_model_infos(save_dirpath: pathlib.Path, token: str | None =
     times = 0
     finished = False
     while not finished:
-        finished = get_huggingface_hub_model_infos(save_dirpath, token=token, number_per_file=number_per_file, worker_number=worker_number)
-        times += 1
-        logger.info(f'Not Finished (No. 1): Another Try ... ')
+        try:
+            get_huggingface_hub_model_infos(save_dirpath, token=token, number_per_file=number_per_file, worker_number=worker_number)
+            finished = True
+        except:
+            finished = False
+            times += 1
+            logger.info(f'!!! Not Finished (No. 1): Another Try ... ')
 
 def save_huggingface_model_ids(save_dirpath: pathlib.Path, token: str | None = None, number_per_file: int | None = None) -> None:
     model_ids_per_file = list()
@@ -57,9 +61,13 @@ def save_huggingface_metric_infos(save_dirpath: pathlib.Path, token: str | None 
     times = 0
     finished = False
     while not finished:
-        finished = get_huggingface_hub_metric_infos(save_dirpath, token=token)
-        times += 1
-        logger.info(f'Not Finished (No. 1): Another Try ... ')
+        try:
+            get_huggingface_hub_metric_infos(save_dirpath, token=token)
+            finished = True
+        except:
+            finished = False
+            times += 1
+            logger.info(f'!!! Not Finished (No. 1): Another Try ... ')
 
 
 def save_huggingface_metric_ids(save_dirpath: pathlib.Path, token: str | None = None) -> None:
@@ -73,9 +81,13 @@ def save_huggingface_task_infos(save_dirpath: pathlib.Path, token: str | None = 
     times = 0
     finished = False
     while not finished:
-        finished = get_huggingface_hub_task_infos(save_dirpath, token=token)
-        times += 1
-        logger.info(f'Not Finished (No. 1): Another Try ... ')
+        try:
+            get_huggingface_hub_task_infos(save_dirpath, token=token)
+            finished = True
+        except:
+            finished = False
+            times += 1
+            logger.info(f'!!! Not Finished (No. 1): Another Try ... ')
 
 
 def save_huggingface_task_ids(save_dirpath: pathlib.Path, token: str | None = None) -> None:
