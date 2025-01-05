@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2025-01-06 00:59:15
+# Last Modified time: 2025-01-06 01:11:39
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -141,8 +141,7 @@ def get_huggingface_hub_task_ids(token: str | None = None) -> list[str]:
     return task_ids
 
 
-def get_huggingface_hub_model_infos(save_dirpath: pathlib.Path, token: str | None = None, number_per_file: int | None = None, worker_number: int | None = None) -> bool:
-    worker_number = worker_number or 1
+def get_huggingface_hub_model_infos(save_dirpath: pathlib.Path, token: str | None = None, number_per_file: int | None = None) -> bool:
     models_path = f'{HUGGINGFACE_HUB_API_ENDPOINT}/models'
 
     cache_dirpath = YLIR_CACHE_ROOT.joinpath(f'retrieve_hf')
@@ -169,59 +168,33 @@ def get_huggingface_hub_model_infos(save_dirpath: pathlib.Path, token: str | Non
     cur_model_info_index = tob_handled_index
     if tob_handled_index < len(model_ids):
         logger.info(f' v Retrieving All Model Infos ...')
-        logger.info(f' - Multiple Worker ({worker_number})')
-        with multiprocessing.Pool(worker_number) as pool:
-            model_infos: list[multiprocessing.pool.ApplyResult] = list()
-            logger.info(f'   Assign Tasks ...')
-            with tqdm.tqdm(total=len(model_ids), desc='Retrieve Model') as progress_bar:
-                for index, model_id in enumerate(model_ids):
-                    if index < tob_handled_index:
-                        progress_bar.set_description(f'Retrieved, Skip - {model_id}')
-                        progress_bar.update(1)
-                        continue
-
-                    progress_bar.set_description(f'Retrieve Model - {model_id}')
-                    model_info = pool.apply_async(
-                        get_one_data_from_huggingface_hub_api,
-                        (
-                            f'{models_path}/{model_id}',
-                        ),
-                        kwds=dict(
-                            params=dict(expand=['cardData', 'lastModified', 'likes', 'downloadsAllTime', 'siblings', 'tags', 'usedStorage']),
-                            token=token
-                        )
-                    )
-                    model_infos.append(model_info)
-                    progress_bar.update(1)
-
-            logger.info(f'   Get Results ...')
-            with tqdm.tqdm(total=len(model_infos), desc='Retrieve Model') as progress_bar:
-                for model_info in model_infos:
-                    model_info = model_info.get()
-                    progress_bar.set_description(f'Retrieve Model - {model_info["id"]}')
-                    model_infos_per_file.append(model_info)
-                    progress_bar.update(1)
-                    if number_per_file is not None and len(model_infos_per_file) == number_per_file:
-                        save_filepath = save_dirpath.joinpath(f'huggingface_model_infos_{tob_model_info_index}_{cur_model_info_index}.json')
-                        save_json(model_infos_per_file, save_filepath, indent=2)
-                        logger.info(f'Total {len(model_infos_per_file)} Model Info Items Saved In: \'{save_filepath}\'.')
-                        cur_model_info_index += 1
-                        tob_model_info_index = cur_model_info_index
-                        save_json(tob_model_info_index, tob_handled_filepath)
-                    else:
-                        cur_model_info_index += 1
-
-                cur_model_info_index -= 1
-                if number_per_file is not None and len(model_infos_per_file) != 0:
+        model_ids = model_ids[tob_handled_index:]
+        with tqdm.tqdm(total=len(model_ids), desc='Retrieve Model') as progress_bar:
+            for model_id in model_ids:
+                model_info = get_one_data_from_huggingface_hub_api(f'{models_path}/{model_id}', params=dict(expand=['cardData', 'lastModified', 'likes', 'downloadsAllTime', 'siblings', 'tags', 'usedStorage']), token=token)
+                progress_bar.set_description(f'Retrieve Model - {model_info["id"]}')
+                model_infos_per_file.append(model_info)
+                progress_bar.update(1)
+                if number_per_file is not None and len(model_infos_per_file) == number_per_file:
                     save_filepath = save_dirpath.joinpath(f'huggingface_model_infos_{tob_model_info_index}_{cur_model_info_index}.json')
                     save_json(model_infos_per_file, save_filepath, indent=2)
                     logger.info(f'Total {len(model_infos_per_file)} Model Info Items Saved In: \'{save_filepath}\'.')
                     cur_model_info_index += 1
                     tob_model_info_index = cur_model_info_index
                     save_json(tob_model_info_index, tob_handled_filepath)
+                else:
+                    cur_model_info_index += 1
 
-        logger.info(f'   Retrieved.')
-        logger.info(f' ^ Total = {len(model_infos)}.')
+            cur_model_info_index -= 1
+            if number_per_file is not None and len(model_infos_per_file) != 0:
+                save_filepath = save_dirpath.joinpath(f'huggingface_model_infos_{tob_model_info_index}_{cur_model_info_index}.json')
+                save_json(model_infos_per_file, save_filepath, indent=2)
+                logger.info(f'Total {len(model_infos_per_file)} Model Info Items Saved In: \'{save_filepath}\'.')
+                cur_model_info_index += 1
+                tob_model_info_index = cur_model_info_index
+                save_json(tob_model_info_index, tob_handled_filepath)
+
+        logger.info(f' ^ Retrieved.')
 
 
 def get_huggingface_hub_metric_infos(save_dirpath: pathlib.Path, token: str | None = None) -> bool:

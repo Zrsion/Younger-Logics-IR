@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2025-01-06 00:53:57
+# Last Modified time: 2025-01-06 01:12:01
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -25,12 +25,12 @@ from younger.commons.logging import logger
 from .utils import get_huggingface_hub_model_infos, get_huggingface_hub_model_ids, get_huggingface_hub_metric_infos, get_huggingface_hub_metric_ids, get_huggingface_hub_task_infos, get_huggingface_hub_task_ids
 
 
-def save_huggingface_model_infos(save_dirpath: pathlib.Path, token: str | None = None, number_per_file: int | None = None, worker_number: int | None = None):
+def save_huggingface_model_infos(save_dirpath: pathlib.Path, token: str | None = None, number_per_file: int | None = None):
     times = 0
     finished = False
     while not finished:
         try:
-            get_huggingface_hub_model_infos(save_dirpath, token=token, number_per_file=number_per_file, worker_number=worker_number)
+            get_huggingface_hub_model_infos(save_dirpath, token=token, number_per_file=number_per_file)
             finished = True
         except:
             finished = False
@@ -103,7 +103,7 @@ def main(mode: Literal['Model_Infos', 'Model_IDs', 'Metric_Infos', 'Metric_IDs',
     os.environ['HF_ENDPOINT'] = 'https://huggingface.co/' if mirror_url == '' else mirror_url
 
     if mode == 'Model_Infos':
-        save_huggingface_model_infos(save_dirpath, token=kwargs['token'], number_per_file=kwargs['number_per_file'], worker_number=kwargs['worker_number'])
+        save_huggingface_model_infos(save_dirpath, token=kwargs['token'], number_per_file=kwargs['number_per_file'])
         return
 
     if mode == 'Model_IDs':

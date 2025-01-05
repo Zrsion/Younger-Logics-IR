@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2025-01-05 15:59:28
+# Last Modified time: 2025-01-06 01:12:16
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -41,7 +41,6 @@ def create_onnx_retrieve():
 @click.option('--token',            required=False, type=str, default=None, help='The HuggingFace token, which requires registering an account on HuggingFace and manually setting the access token. If None, retrieve without HuggingFace access token.')
 @click.option('--mirror-url',       required=False, type=str, default='', help='The URL of the HuggingFace mirror site, which may sometimes speed up your data retrieval process, but this tools cannot guarantee data integrity of the mirror site. If not specified, use HuggingFace official site.')
 @click.option('--number-per-file',  required=False, type=int, default=None, help='Used to specify the number of data items saved in each file. If None, all data will be saved in a single file.')
-@click.option('--worker-number',    required=False, type=int, default=None, help='Used to indicate how many processes are concurrently performing the retrieving procedure.')
 @click.option('--logging-filepath', required=False, type=click.Path(exists=True, file_okay=True, dir_okay=False, path_type=pathlib.Path), default=None, help='Path to the log file; if not provided, defaults to outputting to the terminal only.')
 def create_onnx_retrieve_huggingface(
     mode,
@@ -49,7 +48,6 @@ def create_onnx_retrieve_huggingface(
     token,
     mirror_url,
     number_per_file,
-    worker_number,
     logging_filepath,
 ):
     equip_logger(logging_filepath)
@@ -59,7 +57,6 @@ def create_onnx_retrieve_huggingface(
     kwargs = dict(
         token=token,
         number_per_file=number_per_file,
-        worker_number=worker_number,
     )
 
     retrieve.main(mode, save_dirpath, mirror_url, **kwargs)
