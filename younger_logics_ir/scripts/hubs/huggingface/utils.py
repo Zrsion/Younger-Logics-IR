@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2025-01-05 14:11:32
+# Last Modified time: 2025-01-05 17:10:40
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -14,11 +14,13 @@
 ########################################################################
 
 
+import multiprocessing.pool
 import os
 import re
 import tqdm
 import pathlib
 import requests
+import multiprocessing
 
 from typing import Any, Generator
 from huggingface_hub import utils, HfFileSystem, get_hf_file_metadata, hf_hub_url, scan_cache_dir
@@ -123,23 +125,43 @@ def get_huggingface_hub_task_ids(token: str | None = None) -> list[str]:
     return task_ids
 
 
-def get_huggingface_hub_model_infos(token: str | None = None) -> Generator[dict[str, Any], None, None]:
+def get_huggingface_hub_model_infos(token: str | None = None, worker_number: int | None = None) -> Generator[dict[str, Any], None, None]:
     models_path = f'{HUGGINGFACE_HUB_API_ENDPOINT}/models'
 
-    model_infos: list[dict[str, Any]] = list()
     logger.info(f' v Retrieving All Model IDs ...')
     model_ids = list(get_huggingface_hub_model_ids(token=token))
     logger.info(f' ^ Total = {len(model_ids)}.')
 
     logger.info(f' v Retrieving All Model Infos ...')
-    with tqdm.tqdm(total=len(model_ids), desc='Retrieve Model') as progress_bar:
-        for model_id in model_ids:
-            progress_bar.set_description(f'Retrieve Model - {model_id}')
-            model_storage = get_huggingface_hub_model_storage(model_id, token=token)
-            model_info = get_one_data_from_huggingface_hub_api(f'{models_path}/{model_id}', params=dict(expand=['cardData', 'lastModified', 'likes', 'downloadsAllTime', 'siblings', 'tags']), token=token)
-            model_info['model_storage'] = model_storage
-            yield model_info
-            progress_bar.update(1)
+    if worker_number is None:
+        with tqdm.tqdm(total=len(model_ids), desc='Retrieve Model') as progress_bar:
+            for model_id in model_ids:
+                progress_bar.set_description(f'Retrieve Model - {model_id}')
+                model_storage = get_huggingface_hub_model_storage(model_id, token=token)
+                model_info = get_one_data_from_huggingface_hub_api(f'{models_path}/{model_id}', params=dict(expand=['cardData', 'lastModified', 'likes', 'downloadsAllTime', 'siblings', 'tags']), token=token)
+                model_info['model_storage'] = model_storage
+                yield model_info
+                progress_bar.update(1)
+    else:
+        model_infos: list[multiprocessing.pool.ApplyResult] = list()
+        with multiprocessing.Pool(worker_number) as pool:
+            with tqdm.tqdm(total=len(model_ids), desc='Retrieve Model') as progress_bar:
+                for model_id in model_ids:
+                    model_info = pool.apply_async(
+                        get_one_data_from_huggingface_hub_api,
+                        (
+                            f'{models_path}/{model_id}',
+                        ),
+                        kwds=dict(
+                            params=dict(expand=['cardData', 'lastModified', 'likes', 'downloadsAllTime', 'siblings', 'tags', 'usedStorage']),
+                            token=token
+                        )
+                    )
+                    model_infos.append(model_info)
+
+            for model_info in model_infos:
+                yield model_info.get()
+
     logger.info(f'   Retrieved.')
     logger.info(f' ^ Total = {len(model_infos)}.')
 

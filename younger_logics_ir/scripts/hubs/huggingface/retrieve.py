@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2024-12-29 20:06:37
+# Last Modified time: 2025-01-05 15:57:33
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -25,11 +25,11 @@ from younger.commons.logging import logger
 from .utils import get_huggingface_hub_model_infos, get_huggingface_hub_model_ids, get_huggingface_hub_metric_infos, get_huggingface_hub_metric_ids, get_huggingface_hub_task_infos, get_huggingface_hub_task_ids
 
 
-def save_huggingface_model_infos(save_dirpath: pathlib.Path, token: str | None = None, number_per_file: int | None = None):
+def save_huggingface_model_infos(save_dirpath: pathlib.Path, token: str | None = None, number_per_file: int | None = None, worker_number: int | None = None):
     model_infos_per_file = list()
     svd_model_info_index = 0
     cur_model_info_index = 0
-    for model_info in get_huggingface_hub_model_infos(token=token):
+    for model_info in get_huggingface_hub_model_infos(token=token, worker_number=worker_number):
         model_infos_per_file.append(model_info)
         if number_per_file is not None and len(model_infos_per_file) == number_per_file:
             save_filepath = save_dirpath.joinpath(f'huggingface_model_infos_{svd_model_info_index}_{cur_model_info_index}.json')
@@ -99,7 +99,7 @@ def main(mode: Literal['Model_Infos', 'Model_IDs', 'Metric_Infos', 'Metric_IDs',
     os.environ['HF_ENDPOINT'] = 'https://huggingface.co/' if mirror_url == '' else mirror_url
 
     if mode == 'Model_Infos':
-        save_huggingface_model_infos(save_dirpath, token=kwargs['token'], number_per_file=kwargs['number_per_file'])
+        save_huggingface_model_infos(save_dirpath, token=kwargs['token'], number_per_file=kwargs['number_per_file'], worker_number=kwargs['worker_number'])
         return
 
     if mode == 'Model_IDs':

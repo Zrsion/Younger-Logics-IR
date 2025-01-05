@@ -6,7 +6,7 @@
 # Author: Luzhou Peng (彭路洲) & Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2025-01-01 18:07:12
+# Last Modified time: 2025-01-05 15:59:42
 # Copyright (c) 2025 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -22,14 +22,12 @@ converting nasbench models to Younger instances.
 
 import os
 import tqdm
-import onnx
 import click
 import pathlib
-import argparse
 import multiprocessing
 import tensorflow as tf
 
-from typing import Any, Literal
+from typing import Any
 
 from tf2onnx import tf_loader, optimizer
 from tf2onnx.tfonnx import process_tf_graph
