@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2025-01-06 00:24:04
+# Last Modified time: 2025-01-06 00:37:03
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -147,7 +147,7 @@ def get_huggingface_hub_model_infos(save_dirpath: pathlib.Path, token: str | Non
 
     cache_dirpath = YLIR_CACHE_ROOT.joinpath(f'retrieve_hf')
     model_ids_filepath = cache_dirpath.joinpath(f'model_ids.json')
-    last_handled_filepath = cache_dirpath.joinpath(f'last_handled.stat')
+    tob_handled_filepath = cache_dirpath.joinpath(f'tob_handled.stat')
 
     if model_ids_filepath.is_file():
         logger.info(f' v Found All Model IDs @ Cache: {model_ids_filepath} ...')
@@ -159,15 +159,15 @@ def get_huggingface_hub_model_infos(save_dirpath: pathlib.Path, token: str | Non
         logger.info(f' ^ Total = {len(model_ids)}.')
         save_json(model_ids, model_ids_filepath)
 
-    if last_handled_filepath.is_file():
-        last_handled_index = load_json(last_handled_filepath)
+    if tob_handled_filepath.is_file():
+        tob_handled_index = load_json(tob_handled_filepath)
     else:
-        last_handled_index = -1
+        tob_handled_index = 0
 
     model_infos_per_file = list()
-    svd_model_info_index = last_handled_index + 1
-    cur_model_info_index = last_handled_index + 1
-    if len(model_ids) < cur_model_info_index:
+    tob_model_info_index = tob_handled_index
+    cur_model_info_index = tob_handled_index
+    if tob_handled_index < len(model_ids):
         logger.info(f' v Retrieving All Model Infos ...')
         logger.info(f' - Multiple Worker ({worker_number})')
         with multiprocessing.Pool(worker_number) as pool:
@@ -175,7 +175,7 @@ def get_huggingface_hub_model_infos(save_dirpath: pathlib.Path, token: str | Non
             logger.info(f'   Assign Tasks ...')
             with tqdm.tqdm(total=len(model_ids), desc='Retrieve Model') as progress_bar:
                 for index, model_id in enumerate(model_ids):
-                    if index <= last_handled_index:
+                    if index < tob_handled_index:
                         progress_bar.set_description(f'Retrieved, Skip - {model_id}')
                         progress_bar.update(1)
                         continue
@@ -200,20 +200,23 @@ def get_huggingface_hub_model_infos(save_dirpath: pathlib.Path, token: str | Non
                     model_info = model_info.get()
                     model_infos_per_file.append(model_info)
                     if number_per_file is not None and len(model_infos_per_file) == number_per_file:
-                        save_filepath = save_dirpath.joinpath(f'huggingface_model_infos_{svd_model_info_index}_{cur_model_info_index}.json')
+                        save_filepath = save_dirpath.joinpath(f'huggingface_model_infos_{tob_model_info_index}_{cur_model_info_index}.json')
                         save_json(model_infos_per_file, save_filepath, indent=2)
                         logger.info(f'Total {len(model_infos_per_file)} Model Info Items Saved In: \'{save_filepath}\'.')
-                        svd_model_info_index = cur_model_info_index
-                        save_json(svd_model_info_index, last_handled_filepath)
-                    cur_model_info_index += 1
+                        cur_model_info_index += 1
+                        tob_model_info_index = cur_model_info_index
+                        save_json(tob_model_info_index, tob_handled_filepath)
+                    else:
+                        cur_model_info_index += 1
 
+                cur_model_info_index -= 1
                 if number_per_file is not None and len(model_infos_per_file) != 0:
-                    save_filepath = save_dirpath.joinpath(f'huggingface_model_infos_{svd_model_info_index}_{cur_model_info_index}.json')
+                    save_filepath = save_dirpath.joinpath(f'huggingface_model_infos_{tob_model_info_index}_{cur_model_info_index}.json')
                     save_json(model_infos_per_file, save_filepath, indent=2)
                     logger.info(f'Total {len(model_infos_per_file)} Model Info Items Saved In: \'{save_filepath}\'.')
-                    svd_model_info_index = cur_model_info_index
-                    save_json(svd_model_info_index, last_handled_filepath)
-                logger.info(f'Finished. Total {cur_model_info_index} Model Infos.')
+                    cur_model_info_index += 1
+                    tob_model_info_index = cur_model_info_index
+                    save_json(tob_model_info_index, tob_handled_filepath)
 
         logger.info(f'   Retrieved.')
         logger.info(f' ^ Total = {len(model_infos)}.')
