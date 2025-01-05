@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2025-01-06 00:37:03
+# Last Modified time: 2025-01-06 00:48:17
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -64,7 +64,7 @@ def get_one_data_from_huggingface_hub_api(path: str, params: dict | None = None,
         utils.hf_raise_for_status(response)
         return response.json()
     except utils.HfHubHTTPError as e:
-        print(f'Request: {e.request_id} - {e.server_message}')
+        print(f'Request: {path} {e.request_id} - {e.server_message}')
         return None
 
 
@@ -97,7 +97,7 @@ def get_all_data_from_huggingface_hub_api(path: str, params: dict | None = None,
         yield from response.json()
         next_page_path = response.links.get("next", {}).get("url")
     except utils.HfHubHTTPError as e:
-        print(f'Request: {e.request_id} - {e.server_message}')
+        print(f'Request: {path} {e.request_id} - {e.server_message}')
         yield from ()
         next_page_path = None
 
@@ -111,7 +111,7 @@ def get_all_data_from_huggingface_hub_api(path: str, params: dict | None = None,
             yield from response.json()
             next_page_path = response.links.get("next", {}).get("url")
         except utils.HfHubHTTPError as e:
-            print(f'Request: {e.request_id} - {e.server_message}')
+            print(f'Request: {path} {e.request_id} - {e.server_message}')
             yield from ()
             next_page_path = None
 
