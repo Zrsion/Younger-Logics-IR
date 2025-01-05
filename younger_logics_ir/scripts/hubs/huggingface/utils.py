@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2025-01-05 23:32:10
+# Last Modified time: 2025-01-06 00:17:42
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -141,7 +141,7 @@ def get_huggingface_hub_task_ids(token: str | None = None) -> list[str]:
     return task_ids
 
 
-def get_huggingface_hub_model_infos(save_dirpath: pathlib.Path, token: str | None = None, number_per_file: int | None = None, worker_number: int | None = None) -> Generator[list[dict[str, Any]] | dict[str, Any], None, None]:
+def get_huggingface_hub_model_infos(save_dirpath: pathlib.Path, token: str | None = None, number_per_file: int | None = None, worker_number: int | None = None):
     worker_number = worker_number or 1
     models_path = f'{HUGGINGFACE_HUB_API_ENDPOINT}/models'
 
@@ -218,18 +218,22 @@ def get_huggingface_hub_model_infos(save_dirpath: pathlib.Path, token: str | Non
     logger.info(f' ^ Total = {len(model_infos)}.')
 
 
-def get_huggingface_hub_metric_infos(token: str | None = None) -> list[dict[str, Any]]:
+def get_huggingface_hub_metric_infos(save_dirpath: pathlib.Path, token: str | None = None):
     metrics_path = f'{HUGGINGFACE_HUB_API_ENDPOINT}/metrics'
     metrics = get_all_data_from_huggingface_hub_api(metrics_path, token=token)
     metric_infos = [metric for metric in metrics]
-    return metric_infos
+    save_filepath = save_dirpath.joinpath('huggingface_metric_infos.json')
+    save_json(metric_infos, save_filepath, indent=2)
+    logger.info(f'Total {len(metric_infos)} Metric Infos. Results Saved In: \'{save_filepath}\'.')
 
 
-def get_huggingface_hub_task_infos(token: str | None = None) -> list[dict[str, Any]]:
+def get_huggingface_hub_task_infos(save_dirpath: pathlib.Path, token: str | None = None):
     tasks_path = f'{HUGGINGFACE_HUB_API_ENDPOINT}/tasks'
     tasks = get_all_data_from_huggingface_hub_api(tasks_path, token=token)
     task_infos = [task_info for task_id, task_info in tasks.items()]
-    return task_infos
+    save_filepath = save_dirpath.joinpath('huggingface_task_infos.json')
+    save_json(task_infos, save_filepath, indent=2)
+    logger.info(f'Total {len(task_infos)} Tasks Infos. Results Saved In: \'{save_filepath}\'.')
 
 
 ####################################################################################################

@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2025-01-05 23:32:59
+# Last Modified time: 2025-01-06 00:18:11
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -49,10 +49,7 @@ def save_huggingface_model_ids(save_dirpath: pathlib.Path, token: str | None = N
 
 
 def save_huggingface_metric_infos(save_dirpath: pathlib.Path, token: str | None = None) -> None:
-    metric_infos = get_huggingface_hub_metric_infos(token=token)
-    save_filepath = save_dirpath.joinpath('huggingface_metric_infos.json')
-    save_json(metric_infos, save_filepath, indent=2)
-    logger.info(f'Total {len(metric_infos)} Metric Infos. Results Saved In: \'{save_filepath}\'.')
+    get_huggingface_hub_metric_infos(save_dirpath, token=token)
 
 
 def save_huggingface_metric_ids(save_dirpath: pathlib.Path, token: str | None = None) -> None:
@@ -63,10 +60,7 @@ def save_huggingface_metric_ids(save_dirpath: pathlib.Path, token: str | None = 
 
 
 def save_huggingface_task_infos(save_dirpath: pathlib.Path, token: str | None = None) -> None:
-    task_infos = get_huggingface_hub_task_infos(token=token)
-    save_filepath = save_dirpath.joinpath('huggingface_task_infos.json')
-    save_json(task_infos, save_filepath, indent=2)
-    logger.info(f'Total {len(task_infos)} Tasks Infos. Results Saved In: \'{save_filepath}\'.')
+    get_huggingface_hub_task_infos(save_dirpath, token=token)
 
 
 def save_huggingface_task_ids(save_dirpath: pathlib.Path, token: str | None = None) -> None:
