@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2025-01-05 17:45:14
+# Last Modified time: 2025-01-05 18:04:41
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -58,8 +58,12 @@ def get_one_data_from_huggingface_hub_api(path: str, params: dict | None = None,
     session = requests.Session()
     headers = utils.build_hf_headers(token=token)
     response = session.get(path, params=params, headers=headers)
-    utils.hf_raise_for_status(response)
-    return response.json()
+    try:
+        utils.hf_raise_for_status(response)
+        return response.json()
+    except utils.HfHubHTTPError as e:
+        print(f'Request: {e.request_id} - {e.server_message}')
+        return None
 
 
 def get_all_data_from_huggingface_hub_api(path: str, params: dict | None = None, token: str | None = None) -> Generator[Any, None, None]:
@@ -86,18 +90,28 @@ def get_all_data_from_huggingface_hub_api(path: str, params: dict | None = None,
     session = requests.Session()
     headers = utils.build_hf_headers(token=token)
     response = session.get(path, params=params, headers=headers)
-    utils.hf_raise_for_status(response)
-    yield from response.json()
-
-    # Follow pages
-    # Next link already contains query params
-    next_page_path = response.links.get("next", {}).get("url")
-    while next_page_path is not None:
-        logger.debug(f"Pagination detected. Requesting next page: {next_page_path}")
-        response = session.get(next_page_path, headers=headers)
+    try:
         utils.hf_raise_for_status(response)
         yield from response.json()
         next_page_path = response.links.get("next", {}).get("url")
+    except utils.HfHubHTTPError as e:
+        print(f'Request: {e.request_id} - {e.server_message}')
+        yield from ()
+        next_page_path = None
+
+    # Follow pages
+    # Next link already contains query params
+    while next_page_path is not None:
+        logger.debug(f"Pagination detected. Requesting next page: {next_page_path}")
+        response = session.get(next_page_path, headers=headers)
+        try:
+            utils.hf_raise_for_status(response)
+            yield from response.json()
+            next_page_path = response.links.get("next", {}).get("url")
+        except utils.HfHubHTTPError as e:
+            print(f'Request: {e.request_id} - {e.server_message}')
+            yield from ()
+            next_page_path = None
 
 
 #############################################################################################################
@@ -139,9 +153,13 @@ def get_huggingface_hub_model_infos(token: str | None = None, worker_number: int
                 progress_bar.set_description(f'Retrieve Model - {model_id}')
                 model_storage = get_huggingface_hub_model_storage(model_id, token=token)
                 model_info = get_one_data_from_huggingface_hub_api(f'{models_path}/{model_id}', params=dict(expand=['cardData', 'lastModified', 'likes', 'downloadsAllTime', 'siblings', 'tags']), token=token)
-                model_info['model_storage'] = model_storage
-                yield model_info
-                progress_bar.update(1)
+                if model_info is None:
+                    progress_bar.update(1)
+                    continue
+                else:
+                    model_info['model_storage'] = model_storage
+                    yield model_info
+                    progress_bar.update(1)
     else:
         logger.info(f' - Multiple Worker ({worker_number})')
         model_infos: list[multiprocessing.pool.ApplyResult] = list()
@@ -167,9 +185,14 @@ def get_huggingface_hub_model_infos(token: str | None = None, worker_number: int
             with tqdm.tqdm(total=len(model_ids), desc='Retrieve Model') as progress_bar:
                 for model_info in model_infos:
                     model_info = model_info.get()
-                    progress_bar.set_description(f'Getting - {model_info["id"]}')
-                    yield model_info
-                    progress_bar.update(1)
+                    if model_info is None:
+                        progress_bar.set_description(f'Getting - !Access Error!')
+                        progress_bar.update(1)
+                        continue
+                    else:
+                        progress_bar.set_description(f'Getting - {model_info["id"]}')
+                        yield model_info
+                        progress_bar.update(1)
 
     logger.info(f'   Retrieved.')
     logger.info(f' ^ Total = {len(model_infos)}.')
@@ -198,7 +221,10 @@ def get_huggingface_hub_model_storage(model_id: str, simple: bool = True, token:
     if simple:
         model_path = f'{HUGGINGFACE_HUB_API_ENDPOINT}/models/{model_id}'
         simple_model_info = get_one_data_from_huggingface_hub_api(model_path, params=dict(expand=['usedStorage']), token=token)
-        model_storage = simple_model_info['usedStorage']
+        if simple_model_info is None:
+            model_storage = 0
+        else:
+            model_storage = simple_model_info['usedStorage']
     else:
         hf_file_system = HfFileSystem(token=token)
         filenames = list()
@@ -222,12 +248,13 @@ def get_huggingface_hub_model_siblings(model_id: str, folder: str | None = None,
         model_path = f'{HUGGINGFACE_HUB_API_ENDPOINT}/models/{model_id}'
         simple_model_info = get_one_data_from_huggingface_hub_api(model_path, params=dict(expand=['siblings']), token=token)
         model_siblings = list()
-        for sibling_detail in simple_model_info['siblings']:
-            if suffixes is None:
-                model_siblings.append(sibling_detail['rfilename'])
-            else:
-                if os.path.splitext(sibling_detail['rfilename'])[1] in suffixes:
+        if simple_model_info is not None:
+            for sibling_detail in simple_model_info['siblings']:
+                if suffixes is None:
                     model_siblings.append(sibling_detail['rfilename'])
+                else:
+                    if os.path.splitext(sibling_detail['rfilename'])[1] in suffixes:
+                        model_siblings.append(sibling_detail['rfilename'])
     else:
         hf_file_system = HfFileSystem(token=token)
         model_siblings = list()
