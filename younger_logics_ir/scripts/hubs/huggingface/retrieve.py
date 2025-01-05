@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2025-01-05 17:37:54
+# Last Modified time: 2025-01-05 23:32:59
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -26,24 +26,7 @@ from .utils import get_huggingface_hub_model_infos, get_huggingface_hub_model_id
 
 
 def save_huggingface_model_infos(save_dirpath: pathlib.Path, token: str | None = None, number_per_file: int | None = None, worker_number: int | None = None):
-    model_infos_per_file = list()
-    svd_model_info_index = 0
-    cur_model_info_index = 0
-    for model_info in get_huggingface_hub_model_infos(token=token, worker_number=worker_number):
-        model_infos_per_file.append(model_info)
-        if number_per_file is not None and len(model_infos_per_file) == number_per_file:
-            save_filepath = save_dirpath.joinpath(f'huggingface_model_infos_{svd_model_info_index}_{cur_model_info_index}.json')
-            save_json(model_infos_per_file, save_filepath, indent=2)
-            logger.info(f'Total {len(model_infos_per_file)} Model Info Items Saved In: \'{save_filepath}\'.')
-            svd_model_info_index = cur_model_info_index
-        cur_model_info_index += 1
-
-    if number_per_file is not None and len(model_infos_per_file) != 0:
-        save_filepath = save_dirpath.joinpath(f'huggingface_model_infos_{svd_model_info_index}_{cur_model_info_index}.json')
-        save_json(model_infos_per_file, save_filepath, indent=2)
-        logger.info(f'Total {len(model_infos_per_file)} Model Info Items Saved In: \'{save_filepath}\'.')
-    logger.info(f'Finished. Total {cur_model_info_index} Model Infos.')
-
+    get_huggingface_hub_model_infos(save_dirpath, token=token, number_per_file=number_per_file, worker_number=worker_number)
 
 def save_huggingface_model_ids(save_dirpath: pathlib.Path, token: str | None = None, number_per_file: int | None = None) -> None:
     model_ids_per_file = list()
