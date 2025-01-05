@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2025-01-06 00:52:28
+# Last Modified time: 2025-01-06 00:59:15
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -200,6 +200,7 @@ def get_huggingface_hub_model_infos(save_dirpath: pathlib.Path, token: str | Non
                     model_info = model_info.get()
                     progress_bar.set_description(f'Retrieve Model - {model_info["id"]}')
                     model_infos_per_file.append(model_info)
+                    progress_bar.update(1)
                     if number_per_file is not None and len(model_infos_per_file) == number_per_file:
                         save_filepath = save_dirpath.joinpath(f'huggingface_model_infos_{tob_model_info_index}_{cur_model_info_index}.json')
                         save_json(model_infos_per_file, save_filepath, indent=2)
@@ -209,7 +210,6 @@ def get_huggingface_hub_model_infos(save_dirpath: pathlib.Path, token: str | Non
                         save_json(tob_model_info_index, tob_handled_filepath)
                     else:
                         cur_model_info_index += 1
-                    progress_bar.update(1)
 
                 cur_model_info_index -= 1
                 if number_per_file is not None and len(model_infos_per_file) != 0:
