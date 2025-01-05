@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2025-01-03 15:31:21
+# Last Modified time: 2025-01-05 14:11:32
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -32,7 +32,35 @@ from younger.commons.logging import logger
 HUGGINGFACE_HUB_API_ENDPOINT = 'https://huggingface.co/api'
 
 
-def get_data_from_huggingface_hub_api(path: str, params: dict | None = None, token: str | None = None) -> Generator[Any, None, None]:
+def get_one_data_from_huggingface_hub_api(path: str, params: dict | None = None, token: str | None = None) -> Any:
+    """
+    _summary_
+
+    :param path: _description_
+    :type path: str
+    :param params: _description_, defaults to None
+    :type params: dict | None, optional
+    :param token: _description_, defaults to None
+    :type token: str | None, optional
+
+    :yield: _description_
+    :rtype: Any
+
+    .. note::
+        The Code are modified based on the official Hugging Face Hub source codes. (https://github.com/huggingface/huggingface_hub/blob/main/src/huggingface_hub/utils/_pagination.py)
+        `paginate` is called by list_models, list_datasets, and list_spaces methods of huggingface_hub.HfApi;
+    """
+
+    params = params or dict()
+
+    session = requests.Session()
+    headers = utils.build_hf_headers(token=token)
+    response = session.get(path, params=params, headers=headers)
+    utils.hf_raise_for_status(response)
+    return response.json()
+
+
+def get_all_data_from_huggingface_hub_api(path: str, params: dict | None = None, token: str | None = None) -> Generator[Any, None, None]:
     """
     _summary_
 
@@ -77,20 +105,20 @@ def get_data_from_huggingface_hub_api(path: str, params: dict | None = None, tok
 
 def get_huggingface_hub_model_ids(token: str | None = None) -> Generator[str, None, None]:
     models_path = f'{HUGGINGFACE_HUB_API_ENDPOINT}/models'
-    models = get_data_from_huggingface_hub_api(models_path, params=dict(sort='lastModified', direction=-1, expand=['lastModified']), token=token)
+    models = get_all_data_from_huggingface_hub_api(models_path, params=dict(sort='lastModified', direction=-1, expand=['lastModified']), token=token)
     return (model['id'] for model in models)
 
 
 def get_huggingface_hub_metric_ids(token: str | None = None) -> list[str]:
     metrics_path = f'{HUGGINGFACE_HUB_API_ENDPOINT}/metrics'
-    metrics = get_data_from_huggingface_hub_api(metrics_path, token=token)
+    metrics = get_all_data_from_huggingface_hub_api(metrics_path, token=token)
     metric_ids = [metric['id'] for metric in metrics]
     return metric_ids
 
 
 def get_huggingface_hub_task_ids(token: str | None = None) -> list[str]:
     tasks_path = f'{HUGGINGFACE_HUB_API_ENDPOINT}/tasks'
-    tasks = get_data_from_huggingface_hub_api(tasks_path, token=token)
+    tasks = get_all_data_from_huggingface_hub_api(tasks_path, token=token)
     task_ids = [task_id for task_id, task_info in tasks.items()]
     return task_ids
 
@@ -108,7 +136,7 @@ def get_huggingface_hub_model_infos(token: str | None = None) -> Generator[dict[
         for model_id in model_ids:
             progress_bar.set_description(f'Retrieve Model - {model_id}')
             model_storage = get_huggingface_hub_model_storage(model_id, token=token)
-            model_info = get_data_from_huggingface_hub_api(f'{models_path}/{model_id}', params=dict(expand=['cardData', 'lastModified', 'likes', 'downloadsAllTime', 'siblings', 'tags']), token=token)
+            model_info = get_one_data_from_huggingface_hub_api(f'{models_path}/{model_id}', params=dict(expand=['cardData', 'lastModified', 'likes', 'downloadsAllTime', 'siblings', 'tags']), token=token)
             model_info['model_storage'] = model_storage
             yield model_info
             progress_bar.update(1)
@@ -118,14 +146,14 @@ def get_huggingface_hub_model_infos(token: str | None = None) -> Generator[dict[
 
 def get_huggingface_hub_metric_infos(token: str | None = None) -> list[dict[str, Any]]:
     metrics_path = f'{HUGGINGFACE_HUB_API_ENDPOINT}/metrics'
-    metrics = get_data_from_huggingface_hub_api(metrics_path, token=token)
+    metrics = get_all_data_from_huggingface_hub_api(metrics_path, token=token)
     metric_infos = [metric for metric in metrics]
     return metric_infos
 
 
 def get_huggingface_hub_task_infos(token: str | None = None) -> list[dict[str, Any]]:
     tasks_path = f'{HUGGINGFACE_HUB_API_ENDPOINT}/tasks'
-    tasks = get_data_from_huggingface_hub_api(tasks_path, token=token)
+    tasks = get_all_data_from_huggingface_hub_api(tasks_path, token=token)
     task_infos = [task_info for task_id, task_info in tasks.items()]
     return task_infos
 
@@ -138,7 +166,7 @@ def get_huggingface_hub_task_infos(token: str | None = None) -> list[dict[str, A
 def get_huggingface_hub_model_storage(model_id: str, simple: bool = True, token: str | None = None) -> int:
     if simple:
         model_path = f'{HUGGINGFACE_HUB_API_ENDPOINT}/models/{model_id}'
-        simple_model_info = get_data_from_huggingface_hub_api(model_path, params=dict(expand=['usedStorage']), token=token)
+        simple_model_info = get_one_data_from_huggingface_hub_api(model_path, params=dict(expand=['usedStorage']), token=token)
         model_storage = simple_model_info['usedStorage']
     else:
         hf_file_system = HfFileSystem(token=token)
@@ -161,7 +189,7 @@ def get_huggingface_hub_model_storage(model_id: str, simple: bool = True, token:
 def get_huggingface_hub_model_siblings(model_id: str, folder: str | None = None, suffixes: list[str] | None = None, simple: bool = True, token: str | None = None) -> list[tuple[str, str]]:
     if simple:
         model_path = f'{HUGGINGFACE_HUB_API_ENDPOINT}/models/{model_id}'
-        simple_model_info = get_data_from_huggingface_hub_api(model_path, params=dict(expand=['siblings']), token=token)
+        simple_model_info = get_one_data_from_huggingface_hub_api(model_path, params=dict(expand=['siblings']), token=token)
         model_siblings = list()
         for sibling_detail in simple_model_info['siblings']:
             if suffixes is None:
