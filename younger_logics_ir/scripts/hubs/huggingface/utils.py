@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2025-01-05 17:42:44
+# Last Modified time: 2025-01-05 17:45:14
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -108,11 +108,7 @@ def get_all_data_from_huggingface_hub_api(path: str, params: dict | None = None,
 def get_huggingface_hub_model_ids(token: str | None = None) -> Generator[str, None, None]:
     models_path = f'{HUGGINGFACE_HUB_API_ENDPOINT}/models'
     models = get_all_data_from_huggingface_hub_api(models_path, params=dict(sort='lastModified', direction=-1, expand=['lastModified']), token=token)
-    for i, model in enumerate(models):
-        if i== 100:
-            break
-        yield model['id']
-    # return (model['id'] for model in models)
+    return (model['id'] for model in models)
 
 
 def get_huggingface_hub_metric_ids(token: str | None = None) -> list[str]:
