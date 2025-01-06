@@ -43,10 +43,10 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-scripts-hf = ["huggingface_hub"]
+scripts-hf = ["huggingface_hub", "tf2onnx"]
 scripts-ox = []
 scripts-tr = ["torch", "torchvision"]
-scripts = ["numpy", "pandas", "isocodes", "huggingface_hub", "torch", "torchvision"]
+scripts = ["numpy", "pandas", "isocodes", "huggingface_hub", "tf2onnx", "torch", "torchvision"]
 
 developer = [
     "sphinx"
