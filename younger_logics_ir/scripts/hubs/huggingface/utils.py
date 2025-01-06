@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2025-01-06 10:41:48
+# Last Modified time: 2025-01-06 21:26:26
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -14,7 +14,6 @@
 ########################################################################
 
 
-import multiprocessing.pool
 import os
 import re
 import tqdm
@@ -26,7 +25,8 @@ from typing import Any, Generator
 from huggingface_hub import utils, HfFileSystem, get_hf_file_metadata, hf_hub_url, scan_cache_dir
 from huggingface_hub.constants import HUGGINGFACE_HUB_CACHE
 
-from younger.commons.io import load_json, save_json, create_dir, delete_dir, get_human_readable_size_representation
+from younger.commons.io import save_json, delete_dir, get_human_readable_size_representation
+from younger.commons.cache import CachedChunks
 from younger.commons.string import extract_possible_digits_from_readme_string, extract_possible_tables_from_readme_string, split_front_matter_from_readme_string, README_DATE_Pattern, README_DATETIME_Pattern, README_TABLE_Pattern
 from younger.commons.logging import logger
 
@@ -141,66 +141,38 @@ def get_huggingface_hub_task_ids(token: str | None = None) -> list[str]:
     return task_ids
 
 
-def get_huggingface_hub_model_infos(save_dirpath: pathlib.Path, token: str | None = None, number_per_file: int | None = None) -> bool:
+def get_huggingface_hub_model_infos(save_dirpath: pathlib.Path, token: str | None = None, number_per_file: int | None = None, worker_number: int | None = None) -> bool:
+    worker_number = worker_number or 1
     models_path = f'{HUGGINGFACE_HUB_API_ENDPOINT}/models'
 
     cache_dirpath = YLIR_CACHE_ROOT.joinpath(f'retrieve_hf')
-    model_infos_filepath = cache_dirpath.joinpath(f'model_infos.json')
-    tob_handled_filepath = cache_dirpath.joinpath(f'tob_handled.stat')
+    simple_model_infos_cache_dirpath = cache_dirpath.joinpath(f'simple_model_infos')
 
-    if model_infos_filepath.is_file():
-        logger.info(f' v Found All Simple Model Infos @ Cache: {model_infos_filepath} ...')
-        model_infos = load_json(model_infos_filepath)
-        logger.info(f' ^ Total = {len(model_infos)}.')
-    else:
-        logger.info(f' v Retrieving All Simple Model Infos ...')
-        model_infos = list()
-        with tqdm.tqdm(desc='Retrieve Simple Model Infos') as progress_bar:
-            for model_info in get_all_data_from_huggingface_hub_api(f'{models_path}', params=dict(sort='lastModified', expand=['cardData', 'lastModified', 'likes', 'downloadsAllTime', 'siblings', 'tags']), token=token):
-                model_infos.append(model_info)
-                progress_bar.update(1)
-        logger.info(f' ^ Total = {len(model_infos)}.')
-        save_json(model_infos, model_infos_filepath)
+    logger.info(f' v Retrieving All Simple Model Infos ...')
+    chunks_of_simple_model_infos = CachedChunks(
+        simple_model_infos_cache_dirpath,
+        get_all_data_from_huggingface_hub_api(f'{models_path}', params=dict(sort='lastModified', expand=['cardData', 'lastModified', 'likes', 'downloadsAllTime', 'siblings', 'tags']), token=token),
+        number_per_file
+    )
+    logger.info(f' ^ Total = {len(chunks_of_simple_model_infos)}.')
 
-    if tob_handled_filepath.is_file():
-        tob_handled_index = load_json(tob_handled_filepath)
-    else:
-        tob_handled_index = 0
-
-    model_infos_per_file = list()
-    tob_model_info_index = tob_handled_index
-    cur_model_info_index = tob_handled_index
-    if tob_handled_index < len(model_infos):
-        logger.info(f' v Retrieving All Model Infos ...')
-        model_infos = model_infos[tob_handled_index:]
-        with tqdm.tqdm(total=len(model_infos), desc='Retrieve Model') as progress_bar:
-            for model_info in model_infos:
-                model_id = model_info['id']
+    logger.info(f' v Retrieving All Model Infos ...')
+    with tqdm.tqdm(initial=chunks_of_simple_model_infos.current_position, total=len(chunks_of_simple_model_infos), desc='Retrieve Model') as progress_bar:
+        for chunk_of_simple_model_infos in chunks_of_simple_model_infos:
+            model_infos_per_file = list()
+            for simple_model_info in chunk_of_simple_model_infos:
+                model_id = simple_model_info['id']
                 model_storage = get_huggingface_hub_model_storage(model_id, simple=True, token=token)
                 progress_bar.set_description(f'Retrieve Model - {model_id}')
-                model_info['usedStorage'] = model_storage
-                model_infos_per_file.append(model_info)
+                simple_model_info['usedStorage'] = model_storage
+                model_infos_per_file.append(simple_model_info)
                 progress_bar.update(1)
-                if number_per_file is not None and len(model_infos_per_file) == number_per_file:
-                    save_filepath = save_dirpath.joinpath(f'huggingface_model_infos_{tob_model_info_index}_{cur_model_info_index}.json')
-                    save_json(model_infos_per_file, save_filepath, indent=2)
-                    logger.info(f'Total {len(model_infos_per_file)} Model Info Items Saved In: \'{save_filepath}\'.')
-                    cur_model_info_index += 1
-                    tob_model_info_index = cur_model_info_index
-                    save_json(tob_model_info_index, tob_handled_filepath)
-                else:
-                    cur_model_info_index += 1
 
-            cur_model_info_index -= 1
-            if number_per_file is not None and len(model_infos_per_file) != 0:
-                save_filepath = save_dirpath.joinpath(f'huggingface_model_infos_{tob_model_info_index}_{cur_model_info_index}.json')
-                save_json(model_infos_per_file, save_filepath, indent=2)
-                logger.info(f'Total {len(model_infos_per_file)} Model Info Items Saved In: \'{save_filepath}\'.')
-                cur_model_info_index += 1
-                tob_model_info_index = cur_model_info_index
-                save_json(tob_model_info_index, tob_handled_filepath)
+            save_filepath = save_dirpath.joinpath(f'huggingface_hub_model_infos_{chunks_of_simple_model_infos.current_chunk_id}.json')
+            save_json(model_infos_per_file, save_filepath, indent=2)
+            logger.info(f'Total {len(model_infos_per_file)} Model Info Items Saved In: \'{save_filepath}\'.')
 
-        logger.info(f' ^ Retrieved.')
+    logger.info(f' ^ Retrieved.')
 
 
 def get_huggingface_hub_metric_infos(save_dirpath: pathlib.Path, token: str | None = None) -> bool:
