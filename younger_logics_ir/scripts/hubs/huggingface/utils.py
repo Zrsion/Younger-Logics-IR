@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2025-01-06 01:11:39
+# Last Modified time: 2025-01-06 10:33:20
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -145,18 +145,20 @@ def get_huggingface_hub_model_infos(save_dirpath: pathlib.Path, token: str | Non
     models_path = f'{HUGGINGFACE_HUB_API_ENDPOINT}/models'
 
     cache_dirpath = YLIR_CACHE_ROOT.joinpath(f'retrieve_hf')
-    model_ids_filepath = cache_dirpath.joinpath(f'model_ids.json')
+    model_infos_filepath = cache_dirpath.joinpath(f'model_infos.json')
     tob_handled_filepath = cache_dirpath.joinpath(f'tob_handled.stat')
 
-    if model_ids_filepath.is_file():
-        logger.info(f' v Found All Model IDs @ Cache: {model_ids_filepath} ...')
-        model_ids = load_json(model_ids_filepath)
-        logger.info(f' ^ Total = {len(model_ids)}.')
+    if model_infos_filepath.is_file():
+        logger.info(f' v Found All Simple Model Infos @ Cache: {model_infos_filepath} ...')
+        model_infos = load_json(model_infos_filepath)
+        logger.info(f' ^ Total = {len(model_infos)}.')
     else:
-        logger.info(f' v Retrieving All Model IDs ...')
-        model_ids = list(get_huggingface_hub_model_ids(token=token))
-        logger.info(f' ^ Total = {len(model_ids)}.')
-        save_json(model_ids, model_ids_filepath)
+        logger.info(f' v Retrieving All Simple Model Infos ...')
+        model_infos = list()
+        for model_info in get_all_data_from_huggingface_hub_api(f'{models_path}', params=dict(sort='lastModified', expand=['cardData', 'lastModified', 'likes', 'downloadsAllTime', 'siblings', 'tags']), token=token):
+            model_infos.append(model_info)
+        logger.info(f' ^ Total = {len(model_infos)}.')
+        save_json(model_infos, model_infos_filepath)
 
     if tob_handled_filepath.is_file():
         tob_handled_index = load_json(tob_handled_filepath)
@@ -166,13 +168,15 @@ def get_huggingface_hub_model_infos(save_dirpath: pathlib.Path, token: str | Non
     model_infos_per_file = list()
     tob_model_info_index = tob_handled_index
     cur_model_info_index = tob_handled_index
-    if tob_handled_index < len(model_ids):
+    if tob_handled_index < len(model_infos):
         logger.info(f' v Retrieving All Model Infos ...')
-        model_ids = model_ids[tob_handled_index:]
-        with tqdm.tqdm(total=len(model_ids), desc='Retrieve Model') as progress_bar:
-            for model_id in model_ids:
-                model_info = get_one_data_from_huggingface_hub_api(f'{models_path}/{model_id}', params=dict(expand=['cardData', 'lastModified', 'likes', 'downloadsAllTime', 'siblings', 'tags', 'usedStorage']), token=token)
-                progress_bar.set_description(f'Retrieve Model - {model_info["id"]}')
+        model_infos = model_infos[tob_handled_index:]
+        with tqdm.tqdm(total=len(model_infos), desc='Retrieve Model') as progress_bar:
+            for model_info in model_infos:
+                model_id = model_info['id']
+                model_storage = get_huggingface_hub_model_storage(model_id, simple=True, token=token)
+                progress_bar.set_description(f'Retrieve Model - {model_id}')
+                model_info['usedStorage'] = model_storage
                 model_infos_per_file.append(model_info)
                 progress_bar.update(1)
                 if number_per_file is not None and len(model_infos_per_file) == number_per_file:
