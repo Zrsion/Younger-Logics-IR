@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2025-01-06 10:33:20
+# Last Modified time: 2025-01-06 10:41:48
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -155,8 +155,10 @@ def get_huggingface_hub_model_infos(save_dirpath: pathlib.Path, token: str | Non
     else:
         logger.info(f' v Retrieving All Simple Model Infos ...')
         model_infos = list()
-        for model_info in get_all_data_from_huggingface_hub_api(f'{models_path}', params=dict(sort='lastModified', expand=['cardData', 'lastModified', 'likes', 'downloadsAllTime', 'siblings', 'tags']), token=token):
-            model_infos.append(model_info)
+        with tqdm.tqdm(desc='Retrieve Simple Model Infos') as progress_bar:
+            for model_info in get_all_data_from_huggingface_hub_api(f'{models_path}', params=dict(sort='lastModified', expand=['cardData', 'lastModified', 'likes', 'downloadsAllTime', 'siblings', 'tags']), token=token):
+                model_infos.append(model_info)
+                progress_bar.update(1)
         logger.info(f' ^ Total = {len(model_infos)}.')
         save_json(model_infos, model_infos_filepath)
 
