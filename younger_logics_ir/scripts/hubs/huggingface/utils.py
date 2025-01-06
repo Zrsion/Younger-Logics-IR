@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2025-01-06 21:26:26
+# Last Modified time: 2025-01-06 22:23:12
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -19,7 +19,7 @@ import re
 import tqdm
 import pathlib
 import requests
-import multiprocessing
+import multiprocessing.pool
 
 from typing import Any, Generator
 from huggingface_hub import utils, HfFileSystem, get_hf_file_metadata, hf_hub_url, scan_cache_dir
@@ -142,7 +142,6 @@ def get_huggingface_hub_task_ids(token: str | None = None) -> list[str]:
 
 
 def get_huggingface_hub_model_infos(save_dirpath: pathlib.Path, token: str | None = None, number_per_file: int | None = None, worker_number: int | None = None) -> bool:
-    worker_number = worker_number or 1
     models_path = f'{HUGGINGFACE_HUB_API_ENDPOINT}/models'
 
     cache_dirpath = YLIR_CACHE_ROOT.joinpath(f'retrieve_hf')
@@ -160,13 +159,27 @@ def get_huggingface_hub_model_infos(save_dirpath: pathlib.Path, token: str | Non
     with tqdm.tqdm(initial=chunks_of_simple_model_infos.current_position, total=len(chunks_of_simple_model_infos), desc='Retrieve Model') as progress_bar:
         for chunk_of_simple_model_infos in chunks_of_simple_model_infos:
             model_infos_per_file = list()
-            for simple_model_info in chunk_of_simple_model_infos:
-                model_id = simple_model_info['id']
-                model_storage = get_huggingface_hub_model_storage(model_id, simple=True, token=token)
-                progress_bar.set_description(f'Retrieve Model - {model_id}')
-                simple_model_info['usedStorage'] = model_storage
-                model_infos_per_file.append(simple_model_info)
-                progress_bar.update(1)
+            if worker_number is None:
+                for simple_model_info in chunk_of_simple_model_infos:
+                    model_id = simple_model_info['id']
+                    model_storage = get_huggingface_hub_model_storage(model_id, simple=True, token=token)
+                    progress_bar.set_description(f'Retrieve Model - {model_id}')
+                    simple_model_info['usedStorage'] = model_storage
+                    model_infos_per_file.append(simple_model_info)
+                    progress_bar.update(1)
+            else:
+                with multiprocessing.Pool(worker_number) as pool:
+                    logger.info(f' - Assign Tasks ... ')
+                    model_storages = [pool.apply_async(get_huggingface_hub_model_storage, (simple_model_info['id'], True, token)) for simple_model_info in chunk_of_simple_model_infos]
+
+                    logger.info(f' - Get Results ... ')
+                    for model_storage, simple_model_info in zip(model_storages, chunk_of_simple_model_infos):
+                        model_storage = model_storage.get()
+                        model_id = simple_model_info['id']
+                        progress_bar.set_description(f'Retrieve Model - {model_id}')
+                        simple_model_info['usedStorage'] = model_storage
+                        model_infos_per_file.append(simple_model_info)
+                        progress_bar.update(1)
 
             save_filepath = save_dirpath.joinpath(f'huggingface_hub_model_infos_{chunks_of_simple_model_infos.current_chunk_id}.json')
             save_json(model_infos_per_file, save_filepath, indent=2)
