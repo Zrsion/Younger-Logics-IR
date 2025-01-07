@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2025-01-07 17:20:28
+# Last Modified time: 2025-01-07 22:42:27
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -937,27 +937,8 @@ def trans_graph_proto(ox_graph: onnx.GraphProto, depth: int | None = None, const
 
     constant_names = constant_names | (set(graph_initializers.keys()) - set(graph_inputs.keys()))
 
-    # Record: Input Edge Name (ien) -> Node Index of Tail (nit)
-    # For Input Edge and Output Edge, it has only one tail and only one head.
-    ien2nit: dict[str, str] = dict()
-    for node_name in graph_inputs.keys():
-        node_index = add_node('input', node_name=node_name)
-        ien2nit[node_name] = node_index
-
-    # Record: Output Edge Name (oen) -> Node Index of Head (nih)
-    # For Input Edge and Output Edge, it has only one tail and only one head.
-    oen2nih: dict[str, str] = dict()
-    for node_name in graph_outputs.keys():
-        node_index = add_node('output', node_name=node_name)
-        oen2nih[node_name] = node_index
-
-    # For Hidden Edge, it has one tail and multiple head.
-    # Hidden Head Info <head_index, trap_index> (hhi)
-    # Record: Hidden Edge Name (hen) -> [ <Node Index of Head (nih), Trap Index of Head (tit)> ]
-    # Hidden Tail Info <tail_index, emit_index> (hti)
-    # Record: Hidden Edge Name (hen) -> <Node Index of Tail (nit), Emit Index of Tail (eit)>
-    hen2hhis: dict[str, list[tuple[str, int]]] = dict()
-    hen2hti: dict[str, tuple[str, int]] = dict()
+    # 0. Add Operators & Record IO of Operator
+    all_io_of_operator = list()
     for node in ox_graph.node:
         node_attr = trans_node_proto(
             node,
@@ -973,40 +954,59 @@ def trans_graph_proto(ox_graph: onnx.GraphProto, depth: int | None = None, const
             neglect_tensor_values=neglect_tensor_values
         )
         node_index = add_node('operator', node_name=node_attr['name'], node_attr=node_attr)
-        for result_name, result_index in node_attr['results'].items():
-            hen2hti[result_name] = (node_index, result_index)
-        for operand_name, operand_index in node_attr['operands'].items():
-            edges_to_add = edges_to_add_by_edge_name.get(operand_name, list())
-            hen2hhis[operand_name] = hen2hhis.get(operand_name, list()).append((node_index, operand_index))
+        all_io_of_operator.append(
+            dict(
+                node_index = node_index,
+                operands = node_attr['operands'],
+                results = node_attr['results']
+            )
+        )
 
-    # Add Edges
-    # For Hidden Edge, it has one tail and multiple head.
-    # For Input Edge and Output Edge, it has only one tail and only one head.
-    for node_index, node_features in nx_graph.nodes.items():
-        if node_features['node_type'] != 'operator':
+    edges_to_add_by_dataflow: dict[str, dict[Literal['tail_n_emit', 'head_n_trap'], tuple[str, int] | list[tuple[str, int]]]] = dict()
+    # 1. Record (tail_index, emit_index) of each Dataflow.
+    # For Input
+    for node_name in graph_inputs.keys():
+        node_index = add_node('input', node_name=node_name)
+        edges_to_add_by_dataflow[node_name] = dict(
+            tail_n_emit = (node_index, 0),
+            head_n_trap = list(),
+        )
+    # For Node Results
+    for io_of_operator in all_io_of_operator:
+        for result_name, result_index in io_of_operator['results'].items():
+            edges_to_add_by_dataflow[result_name] = dict(
+                tail_n_emit = (io_of_operator['node_index'], result_index),
+                head_n_trap = list()
+            )
+
+    # 2. Record (head_index, trap_index) of each Dataflow.
+    # For Output
+    for node_name in graph_outputs.keys():
+        node_index = add_node('output', node_name=node_name)
+        edges_to_add = edges_to_add_by_dataflow.get(node_name, dict())
+        if edges_to_add.get('tail_n_emit', None) is None:
             continue
-        edges_tobe_added = list()
-        for operand_name, hhis in hen2hhis.items():
-            if operand_name in constant_names:
-                continue
-            if operand_name in ien2nit:
-                edges_tobe_added.append((ien2nit[operand_name], 0, node_index, ))
-                (tail_index, emit_index) = (ien2nit[operand_name], 0)
-            else:
-                if operand_name in hen2hti:
-                    (tail_index, emit_index) = hen2hti[operand_name]
+        else:
+            edges_to_add_by_dataflow[node_name]['head_n_trap'].append((node_index, 0))
+    # For Node Operands
+    for io_of_operator in all_io_of_operator:
+        for operand_name, operand_index in io_of_operator['operands'].items():
+            edges_to_add = edges_to_add_by_dataflow.get(operand_name, dict())
+            if edges_to_add.get('tail_n_emit', None) is None:
+                if operand_name in constant_names:
+                    continue
                 else:
-                    (tail_index, emit_index) = (add_node('outer', node_name=operand_name), 0)
-            add_edge(tail_index, head_index, emit_index, trap_index)
+                    edges_to_add_by_dataflow[node_name] = dict(
+                        tail_n_emit = (add_node('outer', node_name=operand_name), 0),
+                        head_n_trap = [(io_of_operator['node_index'], operand_index)]
+                    )
+            else:
+                edges_to_add_by_dataflow[operand_name]['head_n_trap'].append((io_of_operator['node_index'], operand_index))
 
-        for result_name, (tail_index, emit_index) in hen2hti.items():
-            if result_name in oen2nih:
-                (head_index, trap_index) = (oen2nih[result_name], 0)
-            else:
-                if result_name in hen2hhi:
-                    (head_index, trap_index) = hen2hhi[result_name]
-                else:
-                    raise KeyError(f'{result_name} not defined!')
+    # 3. Add Edges
+    for dataflow, edges_to_add in edges_to_add_by_dataflow.items():
+        tail_index, emit_index = edges_to_add['tail_n_emit']
+        for head_index, trap_index in edges_to_add['head_n_trap']:
             add_edge(tail_index, head_index, emit_index, trap_index)
 
     for (tail_index, head_index), edge_features in nx_graph.edges.items():
