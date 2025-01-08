@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2025-01-07 10:09:49
+# Last Modified time: 2025-01-08 11:21:14
 # Copyright (c) 2025 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -83,8 +83,11 @@ def main(load_dirpath: pathlib.Path, save_dirpath: pathlib.Path):
         instance_unique = instance.unique
         logger.info(f' ^ End Cal Unique')
         instance.save(save_dirpath.joinpath(instance_unique))
+        logicx, logicx_descendants = LogicX.standardize(instance.logicx)
 
-        save_json(LogicX.saved_dag(instance.logicx.dag), save_dirpath.joinpath(instance_unique, f'{onnx_model_filename}.json'), indent=2, cls=YLIRJSONEncoder)
+        save_json(LogicX.saved_dag(logicx.dag), save_dirpath.joinpath(instance_unique, f'{onnx_model_filename}.json'), indent=2, cls=YLIRJSONEncoder)
+        for index, logicx in enumerate(logicx_descendants):
+            save_json(LogicX.saved_dag(logicx.dag), save_dirpath.joinpath(instance_unique, f'{onnx_model_filename}-desc{index}.json'), indent=2, cls=YLIRJSONEncoder)
         logger.info(f'Saved - {instance_unique}')
 
 
