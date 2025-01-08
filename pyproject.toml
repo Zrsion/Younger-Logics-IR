@@ -48,6 +48,9 @@ scripts-ox = []
 scripts-tr = ["torch", "torchvision"]
 scripts = ["numpy", "pandas", "isocodes", "huggingface_hub", "tf2onnx", "torch", "torchvision"]
 
+tools-vs = ["graphviz"]
+tools = ["graphviz"]
+
 developer = [
     "sphinx"
 ]
