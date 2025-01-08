@@ -6,7 +6,7 @@
 # Author: Luzhou Peng (彭路洲) & Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2025-01-06 15:56:14
+# Last Modified time: 2025-01-08 14:36:12
 # Copyright (c) 2025 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -55,7 +55,7 @@ def tf2onnx_main_export(model_path, output_path, opset, model_type = 'keras'):
     outputs = None
     external_tensor_storage = None
     const_node_values = None
-    
+
     if model_type == 'keras':
         frozen_graph, inputs, outputs = tf_loader.from_keras(
             model_path, inputs, outputs
@@ -113,7 +113,7 @@ def convert_pipeline(params):
         # Create module
         features = tf.keras.layers.Input((3,224,224), 1)
         net_outputs = build_keras_model(spec, features, labels, config)
-        net = tf.keras.Model(inputs=features, outputs=net_outputs)
+        net = tf.keras.Model(inputs=features, outputs=net_outputs, training=False)
 
         # Save the module
         net.save(keras_model_filepath)
