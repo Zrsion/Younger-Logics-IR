@@ -6,7 +6,7 @@
 # Author: Luzhou Peng (彭路洲) & Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2025-01-08 14:36:12
+# Last Modified time: 2025-01-08 14:41:31
 # Copyright (c) 2025 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -227,6 +227,7 @@ def main(
                 progress_bar.update(1)
                 continue
             params.append((model_info, cvt_cache_dirpath, ofc_cache_dirpath, instances_dirpath, opset, config))
+            progress_bar.update(1)
 
     with multiprocessing.Pool(worker_number) as pool:
         with tqdm.tqdm(total=len(params), desc='Converting Models') as progress_bar:
