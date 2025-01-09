@@ -6,7 +6,7 @@
 # Author: Luzhou Peng (彭路洲) & Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2025-01-08 14:41:31
+# Last Modified time: 2025-01-09 09:31:03
 # Copyright (c) 2025 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -40,46 +40,7 @@ from younger.commons.logging import set_logger, use_logger, logger
 from younger_logics_ir.modules import Instance, Origin, Implementation
 from younger_logics_ir.converters import convert
 from younger_logics_ir.commons.constants import YLIROriginHub
-
-
-def tf2onnx_main_export(model_path, output_path, opset, model_type = 'keras'):
-    # [NOTE] The Code are modified based on the official tensorflow-onnx source codes. (https://github.com/onnx/tensorflow-onnx/blob/main/tf2onnx/convert.py [Method: main])
-    assert model_type in {'saved_model', 'keras', 'tflite', 'tfjs', 'graph_def', 'from_checkpoint'}
-    model_path = pathlib.Path(model_path)
-    # output_path = pathlib.Path(output_path)
-    model_name = model_path.name
-    tfjs_filepath = None
-    tflite_filepath = None
-    frozen_graph = None
-    inputs = None
-    outputs = None
-    external_tensor_storage = None
-    const_node_values = None
-
-    if model_type == 'keras':
-        frozen_graph, inputs, outputs = tf_loader.from_keras(
-            model_path, inputs, outputs
-        )
-
-    with tf.device("/cpu:0"):
-        with tf.Graph().as_default() as tf_graph:
-            if model_type not in {'tflite', 'tfjs'}:
-                tf.import_graph_def(frozen_graph, name='')
-            graph = process_tf_graph(
-                tf_graph,
-                const_node_values=const_node_values,
-                input_names=inputs,
-                output_names=outputs,
-                tflite_path=tflite_filepath,
-                tfjs_path=tfjs_filepath,
-                opset=opset
-            )
-            onnx_graph = optimizer.optimize_graph(graph, catch_errors=True)
-            model_proto = onnx_graph.make_model(f'converted from {model_name}', external_tensor_storage=external_tensor_storage)
-
-    # This line is for debug
-    # save_protobuf(output_path, model_proto)
-    return model_proto
+from younger_logics_ir.scripts.hubs.huggingface.miscs import tf2onnx_main_export
 
 
 def save_protobuf(path, message, as_text=False):
@@ -113,13 +74,13 @@ def convert_pipeline(params):
         # Create module
         features = tf.keras.layers.Input((3,224,224), 1)
         net_outputs = build_keras_model(spec, features, labels, config)
-        net = tf.keras.Model(inputs=features, outputs=net_outputs, training=False)
+        net = tf.keras.Model(inputs=features, outputs=net_outputs)
 
         # Save the module
         net.save(keras_model_filepath)
 
         # Convert the module to ONNX
-        onnx_model = tf2onnx_main_export(keras_model_filepath, onnx_model_filepath, opset, 'keras')
+        onnx_model = tf2onnx_main_export(keras_model_filepath, onnx_model_filepath, opset, 'keras', directly_return=True)
 
         instance = Instance()
 

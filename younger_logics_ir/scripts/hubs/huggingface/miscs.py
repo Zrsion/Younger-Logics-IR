@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2024-12-29 12:54:07
+# Last Modified time: 2025-01-09 09:30:33
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -28,7 +28,7 @@ from younger.commons.io import get_path_size
 from younger.commons.logging import logger
 
 
-def tf2onnx_main_export(model_path: pathlib.Path, output_path: pathlib.Path, opset: int, model_type: Literal['saved_model', 'keras', 'tflite', 'tfjs'] = 'saved_model'):
+def tf2onnx_main_export(model_path: pathlib.Path, output_path: pathlib.Path, opset: int, model_type: Literal['saved_model', 'keras', 'tflite', 'tfjs'] = 'saved_model', directly_return: bool = False):
     # [NOTE] The Code are modified based on the official tensorflow-onnx source codes. (https://github.com/onnx/tensorflow-onnx/blob/main/tf2onnx/convert.py [Method: main])
     assert model_type in {'saved_model', 'keras', 'tflite', 'tfjs'}
 
@@ -79,9 +79,12 @@ def tf2onnx_main_export(model_path: pathlib.Path, output_path: pathlib.Path, ops
 
     logger.info(f'   ... Successfully converted TensorFlow model {model_path} to ONNX')
 
-    if large_model:
-        utils.save_onnx_zip(output_path, model_proto, external_tensor_storage)
-        logger.info(f'   ... Zipped ONNX model is saved at {output_path}. Unzip before opening in onnxruntime.')
+    if directly_return:
+        return model_proto
     else:
-        utils.save_protobuf(output_path, model_proto)
-        logger.info(f'   ... ONNX model is saved at {output_path}')
+        if large_model:
+            utils.save_onnx_zip(output_path, model_proto, external_tensor_storage)
+            logger.info(f'   ... Zipped ONNX model is saved at {output_path}. Unzip before opening in onnxruntime.')
+        else:
+            utils.save_protobuf(output_path, model_proto)
+            logger.info(f'   ... ONNX model is saved at {output_path}')
