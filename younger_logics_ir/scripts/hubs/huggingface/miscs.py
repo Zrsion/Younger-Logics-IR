@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2025-01-09 09:30:33
+# Last Modified time: 2025-01-09 09:47:05
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -28,9 +28,12 @@ from younger.commons.io import get_path_size
 from younger.commons.logging import logger
 
 
-def tf2onnx_main_export(model_path: pathlib.Path, output_path: pathlib.Path, opset: int, model_type: Literal['saved_model', 'keras', 'tflite', 'tfjs'] = 'saved_model', directly_return: bool = False):
+def tf2onnx_main_export(model_path: pathlib.Path, output_path: pathlib.Path, opset: int, model_type: Literal['saved_model', 'keras', 'tflite', 'tfjs'] = 'saved_model', logging: bool = True, directly_return: bool = False):
     # [NOTE] The Code are modified based on the official tensorflow-onnx source codes. (https://github.com/onnx/tensorflow-onnx/blob/main/tf2onnx/convert.py [Method: main])
     assert model_type in {'saved_model', 'keras', 'tflite', 'tfjs'}
+
+    out_logger_flag = logger.disabled
+    logger.disabled = not logging
 
     model_name = model_path.name
     large_model = 2*1024*1024*1024 < get_path_size(model_path) 
@@ -88,3 +91,5 @@ def tf2onnx_main_export(model_path: pathlib.Path, output_path: pathlib.Path, ops
         else:
             utils.save_protobuf(output_path, model_proto)
             logger.info(f'   ... ONNX model is saved at {output_path}')
+
+    logger.disabled = out_logger_flag

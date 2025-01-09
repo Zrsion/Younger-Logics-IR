@@ -6,7 +6,7 @@
 # Author: Luzhou Peng (彭路洲) & Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2025-01-09 09:31:03
+# Last Modified time: 2025-01-09 09:47:28
 # Copyright (c) 2025 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -80,7 +80,7 @@ def convert_pipeline(params):
         net.save(keras_model_filepath)
 
         # Convert the module to ONNX
-        onnx_model = tf2onnx_main_export(keras_model_filepath, onnx_model_filepath, opset, 'keras', directly_return=True)
+        onnx_model = tf2onnx_main_export(keras_model_filepath, onnx_model_filepath, opset, 'keras', logging=False, directly_return=True)
 
         instance = Instance()
 
