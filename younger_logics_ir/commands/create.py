@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2025-01-10 09:53:11
+# Last Modified time: 2025-01-10 09:57:36
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -134,7 +134,6 @@ def create_onnx_convert_huggingface(
 
     from younger_logics_ir.scripts.hubs.huggingface import convert
 
-    print(1111)
     convert.main(model_infos_filepath, save_dirpath, cache_dirpath, device=device, framework=framework, model_size_limit_l=model_size_limit_l, model_size_limit_r=model_size_limit_r, token=token)
 
 

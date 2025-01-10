@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2025-01-03 16:27:33
+# Last Modified time: 2025-01-10 10:04:00
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -272,16 +272,18 @@ def get_model_infos_and_convert_method(model_infos_filepath: pathlib.Path, frame
         # tflite=convert_tflite,
     )
 
-    def get_model_framework(model_tags: list[str]) -> Literal['optimum', 'onnx', 'keras']:
-        candidate_frameworks = set(model_tags) & supported_frameworks
+    def get_model_frameworks(model_tags: list[str]) -> Literal['optimum', 'onnx', 'keras']:
+        candidate_frameworks = set(model_tags) & set(supported_frameworks)
+        model_frameworks = list()
         for supported_framework in supported_frameworks:
             if supported_framework in candidate_frameworks:
-                return supported_framework
+                model_frameworks.append(supported_framework)
+        return model_frameworks
 
     model_infos: list[dict[str, Any]] = list()
     for model_info in load_json(model_infos_filepath):
-        model_framework = get_model_framework(model_info['tags'])
-        if framework in model_framework and model_size_limit[0] <= model_info['model_storage'] and model_info['model_storage'] <= model_size_limit[1]:
+        model_frameworks = get_model_frameworks(model_info['tags'])
+        if framework in model_frameworks and model_size_limit[0] <= model_info['usedStorage'] and model_info['usedStorage'] <= model_size_limit[1]:
             model_infos.append(model_info)
 
     convert_method = supported_convert_methods[framework]
