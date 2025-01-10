@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2025-01-10 20:46:49
+# Last Modified time: 2025-01-10 20:49:52
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -48,7 +48,7 @@ def safe_optimum_export(model_id: str, cvt_cache_dirpath: pathlib.Path, ofc_cach
     from optimum.exporters.onnx import main_export
     this_status: dict[int, str | dict[str, str]] = dict()
     this_instances: list[Instance] = list()
-    for onnx_opset_version in get_onnx_model_opset_version():
+    for onnx_opset_version in get_onnx_opset_versions():
         try:
             main_export(model_id, cvt_cache_dirpath, opset=onnx_opset_version, device=device, cache_dir=ofc_cache_dirpath, monolith=True, do_validation=False, trust_remote_code=True, no_post_process=True)
             this_status[onnx_opset_version]['_exported_'] = dict()
