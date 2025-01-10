@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2025-01-10 17:00:49
+# Last Modified time: 2025-01-10 18:05:38
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -54,14 +54,14 @@ def safe_optimum_export(model_id: str, cvt_cache_dirpath: pathlib.Path, ofc_cach
             this_status[onnx_opset_version] = dict()
             for filepath in cvt_cache_dirpath.iterdir():
                 filename = filepath.name
-                try:
-                    if filepath.suffix == '.onnx':
+                if filepath.suffix == '.onnx':
+                    try:
                         instance = Instance()
                         instance.setup_logicx(convert(load_model(filename)))
                         this_instances.append(instance)
-                    this_status[onnx_opset_version][filename] = 'success'
-                except:
-                    this_status[onnx_opset_version][filename] = 'onnx2logicx_convert_error'
+                        this_status[onnx_opset_version][filename] = 'success'
+                    except:
+                        this_status[onnx_opset_version][filename] = 'onnx2logicx_convert_error'
         except MemoryError as exception:
             this_status[onnx_opset_version] = 'optimum2onnx_oversize'
         except utils.RepositoryNotFoundError as exception:
