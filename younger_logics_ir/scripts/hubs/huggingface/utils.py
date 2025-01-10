@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2025-01-10 16:58:24
+# Last Modified time: 2025-01-10 17:08:36
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -363,7 +363,7 @@ def infer_supported_frameworks(model_info: dict) -> list[Literal['optimum', 'onn
                 tags.add('onnx')
 
     else:
-        tags = tags.add('optimum')
+        tags.add('optimum')
 
     supported_frameworks = list(tags & all_supported_frameworks)
     return supported_frameworks
