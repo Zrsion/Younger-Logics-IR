@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2025-01-10 20:49:52
+# Last Modified time: 2025-01-10 23:41:43
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -44,88 +44,75 @@ def clean_cache(model_id: str, cvt_cache_dirpath: pathlib.Path, ofc_cache_dirpat
     clean_huggingface_hub_model_cache(model_id, ofc_cache_dirpath)
 
 
-def safe_optimum_export(model_id: str, cvt_cache_dirpath: pathlib.Path, ofc_cache_dirpath: pathlib.Path, results_queue: multiprocessing.Queue, device: str):
+def safe_optimum_export(model_id: str, cvt_cache_dirpath: pathlib.Path, ofc_cache_dirpath: pathlib.Path, onnx_opset_version: int, results_queue: multiprocessing.Queue, device: str):
     from optimum.exporters.onnx import main_export
-    this_status: dict[int, str | dict[str, str]] = dict()
-    this_instances: list[Instance] = list()
-    for onnx_opset_version in get_onnx_opset_versions():
-        try:
-            main_export(model_id, cvt_cache_dirpath, opset=onnx_opset_version, device=device, cache_dir=ofc_cache_dirpath, monolith=True, do_validation=False, trust_remote_code=True, no_post_process=True)
-            this_status[onnx_opset_version]['_exported_'] = dict()
-            for filepath in cvt_cache_dirpath.rglob('*.onnx'):
-                try:
-                    instance = Instance()
-                    instance.setup_logicx(convert(load_model(filepath)))
-                    this_instances.append(instance)
-                    this_status[onnx_opset_version][filepath] = 'success'
-                except:
-                    this_status[onnx_opset_version][filepath] = 'onnx2logicx_convert_error'
-        except MemoryError as exception:
-            this_status[onnx_opset_version] = 'optimum2onnx_oversize'
-        except utils.RepositoryNotFoundError as exception:
-            this_status[onnx_opset_version] = 'optimum2onnx_access_deny'
-        except Exception as exception:
-            this_status[onnx_opset_version] = 'optimum2onnx_convert_error'
-        delete_dir(cvt_cache_dirpath, only_clean=True)
 
-    results_queue.put((this_status, this_instances))
+    try:
+        main_export(model_id, cvt_cache_dirpath, opset=onnx_opset_version, device=device, cache_dir=ofc_cache_dirpath, monolith=True, do_validation=False, trust_remote_code=True, no_post_process=True)
+        this_status = 'success'
+    except MemoryError as exception:
+        this_status = 'oversize'
+    except utils.RepositoryNotFoundError as exception:
+        this_status = 'access_deny'
+    except Exception as exception:
+        this_status = 'convert_error'
+
+    results_queue.put(this_status)
 
 
-def convert_optimum(model_id: str, cvt_cache_dirpath: pathlib.Path, ofc_cache_dirpath: pathlib.Path, device: Literal['cpu', 'cuda'] = 'cpu') -> tuple[dict[str, dict[int, str | dict[str, str]] | Literal['system_kill']], list[Instance]]:
+def convert_optimum(model_id: str, cvt_cache_dirpath: pathlib.Path, ofc_cache_dirpath: pathlib.Path, device: Literal['cpu', 'cuda'] = 'cpu') -> tuple[dict[int, tuple[Literal['success', 'oversize', 'access_deny', 'convert_error', 'system_kill'], dict[str, Literal['success', 'logicx_error']]]], list[Instance]]:
     assert device in {'cpu', 'cuda'}
-    status: dict[str, dict[int, str | dict[str, str]] | Literal['system_kill']] = dict()
+    status: dict[int, tuple[Literal['success', 'oversize', 'access_deny', 'convert_error', 'system_kill'], dict[str, Literal['success', 'logicx_error']]]] = dict()
     instances: list[Instance] = list()
 
-    results_queue = multiprocessing.Queue()
-    subprocess = multiprocessing.Process(target=safe_optimum_export, args=(model_id, cvt_cache_dirpath, ofc_cache_dirpath, results_queue, device))
-    subprocess.start()
-    subprocess.join()
+    for onnx_opset_version in get_onnx_opset_versions():
+        # The highest opset version supported by torch.onnx.export is 20
+        if onnx_opset_version < 14 or onnx_opset_version > 15:
+            continue
+        results_queue = multiprocessing.Queue()
+        subprocess = multiprocessing.Process(target=safe_optimum_export, args=(model_id, cvt_cache_dirpath, ofc_cache_dirpath, onnx_opset_version, results_queue, device))
+        subprocess.start()
+        subprocess.join()
 
-    if results_queue.empty():
-        this_status = 'system_kill'
-        this_instances = list()
-    else:
-        # this_status: dict[int, str]
-        # this_instances: list[Instance]
-        this_status, this_instances = results_queue.get()
-
-    status['main_model'] = this_status
-    instances.extend(this_instances)
+        this_status_details: dict[str, Literal['success', 'logicx_error']] = dict()
+        if results_queue.empty():
+            this_status = 'system_kill'
+        else:
+            this_status = results_queue.get()
+            if this_status == 'success':
+                for filepath in cvt_cache_dirpath.rglob('*.onnx'):
+                    try:
+                        instance = Instance()
+                        instance.setup_logicx(convert(load_model(filepath)))
+                        instances.append(instance)
+                        this_status_details[str(filepath)] = 'success'
+                    except Exception as exception:
+                        this_status_details[str(filepath)] = 'logicx_error'
+        status[onnx_opset_version] = (this_status, this_status_details)
 
     clean_cache(model_id, cvt_cache_dirpath, ofc_cache_dirpath)
     return status, instances
 
 
-def safe_keras_export(cvt_cache_dirpath: pathlib.Path, keras_model_path: pathlib.Path, results_queue: multiprocessing.Queue):
+def safe_keras_export(keras_model_path: pathlib.Path, onnx_model_path: pathlib.Path, onnx_opset_version: int, results_queue: multiprocessing.Queue):
     from .miscs import tf2onnx_main_export
-    this_status: dict[int, str] = dict()
-    this_instances: list[Instance] = list()
-    onnx_model_path = cvt_cache_dirpath.joinpath(f'{hash_string(keras_model_path)}.onnx')
 
     if keras_model_path.is_dir():
         model_type = 'saved_model'
     if keras_model_path.is_file():
         model_type = 'keras'
 
-    for onnx_opset_version in get_onnx_opset_versions():
-        try:
-            tf2onnx_main_export(keras_model_path, onnx_model_path, onnx_opset_version, model_type=model_type)
-            try:
-                instance = Instance()
-                instance.setup_logicx(convert(load_model(onnx_model_path)))
-                this_instances.append(instance)
-                this_status[onnx_opset_version] = 'success'
-            except Exception as exception:
-                this_status[onnx_opset_version] = 'onnx2logicx_convert_error'
-        except Exception as exception:
-            this_status[onnx_opset_version] = 'keras2onnx_convert_error'
-        delete_dir(cvt_cache_dirpath, only_clean=True)
+    try:
+        tf2onnx_main_export(keras_model_path, onnx_model_path, onnx_opset_version, model_type=model_type)
+        this_status = 'success'
+    except Exception as exception:
+        this_status = 'convert_error'
 
-    results_queue.put((this_status, this_instances))
+    results_queue.put(this_status)
 
 
-def convert_keras(model_id: str, cvt_cache_dirpath: pathlib.Path, ofc_cache_dirpath: pathlib.Path, device: Literal['cpu', 'cuda'] = 'cpu') -> tuple[dict[str, dict[int, Any] | Literal['system_kill']], list[Instance]]:
-    status: dict[str, dict[int, str] | Literal['system_kill']] = dict()
+def convert_keras(model_id: str, cvt_cache_dirpath: pathlib.Path, ofc_cache_dirpath: pathlib.Path, device: Literal['cpu', 'cuda'] = 'cpu') -> tuple[dict[str, dict[int, Literal['success', 'convert_error', 'system_kill', 'logicx_error']]], list[Instance]]:
+    status: dict[str, dict[int, Literal['success', 'convert_error', 'logicx_error']]] = dict()
     instances: list[Instance] = list()
     remote_keras_model_paths = list()
     for remote_keras_model_path in get_huggingface_hub_model_siblings(model_id, suffixes=['.keras', '.hdf5', '.h5', '.pbtxt', '.pb']):
@@ -142,96 +129,92 @@ def convert_keras(model_id: str, cvt_cache_dirpath: pathlib.Path, ofc_cache_dirp
         else:
             keras_model_path = pathlib.Path(hf_hub_download(model_id, remote_keras_model_path, cache_dir=ofc_cache_dirpath))
 
-        results_queue = multiprocessing.Queue()
-        subprocess = multiprocessing.Process(target=safe_keras_export, args=(cvt_cache_dirpath, keras_model_path, results_queue))
-        subprocess.start()
-        subprocess.join()
-        if results_queue.empty():
-            this_status = 'system_kill'
-            this_instances = list()
-        else:
-            # this_status: dict[int, str]
-            # this_instances: list[Instance]
-            this_status, this_instances = results_queue.get()
+        status[remote_keras_model_name] = dict()
+        onnx_model_path = cvt_cache_dirpath.joinpath(f'{hash_string(keras_model_path)}.onnx')
+        for onnx_opset_version in get_onnx_opset_versions():
+            # tf2onnx only support 14 - 18 opset version
+            if onnx_opset_version < 14 or 18 < onnx_opset_version:
+                continue
+            results_queue = multiprocessing.Queue()
+            subprocess = multiprocessing.Process(target=safe_keras_export, args=(keras_model_path, onnx_model_path, onnx_opset_version, results_queue))
+            subprocess.start()
+            subprocess.join()
 
-        status[remote_keras_model_name] = this_status
-        instances.extend(this_instances)
+            if results_queue.empty():
+                this_status = 'system_kill'
+            else:
+                this_status = results_queue.get()
+                if this_status == 'success':
+                    try:
+                        instance = Instance()
+                        instance.setup_logicx(convert(load_model(onnx_model_path)))
+                        instances.append(instance)
+                    except Exception as exception:
+                        this_status = 'logicx_error'
+            status[remote_keras_model_name][onnx_opset_version] = this_status
 
     clean_cache(model_id, cvt_cache_dirpath, ofc_cache_dirpath)
     return status, instances
 
 
-def safe_tflite_export(cvt_cache_dirpath: pathlib.Path, tflite_model_path: pathlib.Path, results_queue: multiprocessing.Queue):
+def safe_tflite_export(tflite_model_path: pathlib.Path, onnx_model_path: pathlib.Path, onnx_opset_version: int, results_queue: multiprocessing.Queue):
     from .miscs import tf2onnx_main_export
-    this_status: dict[int, str] = dict()
-    this_instances: list[Instance] = list()
-    onnx_model_path = cvt_cache_dirpath.joinpath(f'{hash_string(tflite_model_path)}.onnx')
-    for onnx_opset_version in get_onnx_opset_versions():
-        try:
-            tf2onnx_main_export(tflite_model_path, onnx_model_path, onnx_opset_version, model_type='tflite')
-            try:
-                instance = Instance()
-                instance.setup_logicx(convert(load_model(onnx_model_path)))
-                this_instances.append(instance)
-                this_status[onnx_opset_version] = 'success'
-            except Exception as exception:
-                this_status[onnx_opset_version] = 'onnx2logicx_convert_error'
-        except Exception as exception:
-            this_status[onnx_opset_version] = 'tflite2onnx_convert_error'
-        delete_dir(cvt_cache_dirpath, only_clean=True)
 
-    results_queue.put((this_status, this_instances))
-        
+    try:
+        tf2onnx_main_export(tflite_model_path, onnx_model_path, onnx_opset_version, model_type='tflite')
+        this_status = 'success'
+    except Exception as exception:
+        this_status = 'convert_error'
 
-def convert_tflite(model_id: str, cvt_cache_dirpath: pathlib.Path, ofc_cache_dirpath: pathlib.Path, device: Literal['cpu', 'cuda'] = 'cpu') -> tuple[dict[str, dict[int, Any] | Literal['system_kill']], list[Instance]]:
-    status: dict[str, dict[int, str] | Literal['system_kill']] = dict()
+    results_queue.put(this_status)
+
+
+def convert_tflite(model_id: str, cvt_cache_dirpath: pathlib.Path, ofc_cache_dirpath: pathlib.Path, device: Literal['cpu', 'cuda'] = 'cpu') -> tuple[dict[str, dict[int, Literal['success', 'convert_error', 'system_kill', 'logicx_error']]], list[Instance]]:
+    status: dict[str, dict[int, Literal['success', 'convert_error', 'system_kill', 'logicx_error']]] = dict()
     instances: list[Instance] = list()
     remote_tflite_model_paths = get_huggingface_hub_model_siblings(model_id, suffixes=['.tflite'])
     for remote_tflite_model_path in remote_tflite_model_paths:
         remote_tflite_model_name = os.path.splitext(remote_tflite_model_path)[0]
         tflite_model_path = pathlib.Path(hf_hub_download(model_id, remote_tflite_model_path, cache_dir=ofc_cache_dirpath))
-        results_queue = multiprocessing.Queue()
-        subprocess = multiprocessing.Process(target=safe_tflite_export, args=(cvt_cache_dirpath, tflite_model_path, results_queue))
-        subprocess.start()
-        subprocess.join()
-        if results_queue.empty():
-            this_status = 'system_kill'
-            this_instances = list()
-        else:
-            # this_status: dict[int, str]
-            # this_instances: list[Instance]
-            this_status, this_instances = results_queue.get()
 
-        status[remote_tflite_model_name] = this_status
-        instances.extend(this_instances)
+        status[remote_tflite_model_name] = dict()
+        onnx_model_path = cvt_cache_dirpath.joinpath(f'{hash_string(tflite_model_path)}.onnx')
+        for onnx_opset_version in get_onnx_opset_versions():
+            # tf2onnx only support 14 - 18 opset version
+            if onnx_opset_version < 14 or 18 < onnx_opset_version:
+                continue
+            results_queue = multiprocessing.Queue()
+            subprocess = multiprocessing.Process(target=safe_tflite_export, args=(cvt_cache_dirpath, tflite_model_path, results_queue))
+            subprocess.start()
+            subprocess.join()
+            if results_queue.empty():
+                this_status = 'system_kill'
+            else:
+                this_status = results_queue.get()
+                if this_status == 'success':
+                    try:
+                        instance = Instance()
+                        instance.setup_logicx(convert(load_model(onnx_model_path)))
+                        instances.append(instance)
+                    except Exception as exception:
+                        this_status = 'logicx_error'
+
+            status[remote_tflite_model_name][onnx_opset_version] = this_status
 
     clean_cache(model_id, cvt_cache_dirpath, ofc_cache_dirpath)
     return status, instances
 
 
-def safe_onnx_export(cvt_cache_dirpath: pathlib.Path, onnx_model_path: pathlib.Path, results_queue: multiprocessing.Queue):
-    this_status: dict[int, str] = dict()
-    this_instances: list[Instance] = list()
-    onnx_model = load_model(onnx_model_path)
-    onnx_model_opset_version = get_onnx_model_opset_version(onnx_model)
-    for onnx_opset_version in get_onnx_opset_versions():
-        if onnx_opset_version == onnx_model_opset_version:
-            continue
-        try:
-            # Convert the ONNX model to the target opset version. This step will not occupy disk space. Thus cvt_cache_dirpath is not used.
-            other_version_onnx_model = onnx.version_converter.convert_version(onnx_model, onnx_opset_version)
-            try:
-                instance = Instance()
-                instance.setup_logicx(convert(other_version_onnx_model))
-                this_instances.append(instance)
-                this_status[onnx_opset_version] = 'success'
-            except Exception as exception:
-                this_status[onnx_opset_version] = 'onnx2logicx_convert_error'
-        except Exception as exception:
-            this_status[onnx_opset_version] = 'onnx2onnx_convert_error'
-        delete_dir(cvt_cache_dirpath, only_clean=True)
+def safe_onnx_export(origin_version_onnx_model_path: pathlib.Path, onnx_model_path: pathlib.Path, onnx_opset_version, results_queue: multiprocessing.Queue):
+    try:
+        origin_version_onnx_model = load_model(origin_version_onnx_model_path)
+        # Convert the ONNX model to the target opset version. This step will not occupy disk space. Thus cvt_cache_dirpath is not used.
+        onnx.save_model(onnx.version_converter.convert_version(origin_version_onnx_model, onnx_opset_version), onnx_model_path)
+        this_status = 'success'
+    except Exception as exception:
+        this_status = 'convert_error'
 
-    results_queue.put((this_status, this_instances))
+    results_queue.put(this_status)
 
 
 def convert_onnx(model_id: str, cvt_cache_dirpath: pathlib.Path, ofc_cache_dirpath: pathlib.Path, device: Literal['cpu', 'cuda'] = 'cpu') -> tuple[dict[str, dict[int, Any] | Literal['system_kill']], list[Instance]]:
@@ -241,20 +224,30 @@ def convert_onnx(model_id: str, cvt_cache_dirpath: pathlib.Path, ofc_cache_dirpa
     for remote_onnx_model_path in remote_onnx_model_paths:
         remote_onnx_model_name = os.path.splitext(remote_onnx_model_path)[0]
         onnx_model_path = pathlib.Path(hf_hub_download(model_id, remote_onnx_model_path, cache_dir=ofc_cache_dirpath))
-        results_queue = multiprocessing.Queue()
-        subprocess = multiprocessing.Process(target=safe_onnx_export, args=(cvt_cache_dirpath, onnx_model_path, results_queue))
-        subprocess.start()
-        subprocess.join()
-        if results_queue.empty():
-            this_status = 'system_kill'
-            this_instances = list()
-        else:
-            # this_status: dict[int, str]
-            # this_instances: list[Instance]
-            this_status, this_instances = results_queue.get()
 
-        status[remote_onnx_model_name] = this_status
-        instances.extend(this_instances)
+        status[remote_onnx_model_name] = dict()
+        onnx_model = load_model(onnx_model_path)
+        onnx_model_opset_version = get_onnx_model_opset_version(onnx_model)
+        for onnx_opset_version in get_onnx_opset_versions():
+            if onnx_opset_version == onnx_model_opset_version:
+                continue
+            other_version_onnx_model_path = cvt_cache_dirpath.joinpath(f'{str(onnx_model_path.with_suffix(""))}-{onnx_opset_version}.onnx')
+            results_queue = multiprocessing.Queue()
+            subprocess = multiprocessing.Process(target=safe_onnx_export, args=(onnx_model_path, other_version_onnx_model_path, onnx_opset_version, results_queue))
+            subprocess.start()
+            subprocess.join()
+            if results_queue.empty():
+                this_status = 'system_kill'
+            else:
+                this_status = results_queue.get()
+                if this_status == 'success':
+                    try:
+                        instance = Instance()
+                        instance.setup_logicx(convert(load_model(other_version_onnx_model_path)))
+                        instances.append(instance)
+                    except Exception as exception:
+                        this_status = 'logicx_error'
+            status[remote_onnx_model_name][onnx_opset_version] = this_status
 
     clean_cache(model_id, cvt_cache_dirpath, ofc_cache_dirpath)
     return status, instances
