@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2025-01-10 09:37:21
+# Last Modified time: 2025-01-10 09:53:11
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -114,7 +114,7 @@ def create_onnx_convert():
     pass
 
 
-@create_onnx_convert.group(name='huggingface')
+@create_onnx_convert.command(name='huggingface')
 @click.option('--model-infos-filepath', required=True,  type=click.Path(exists=True, file_okay=True, dir_okay=False, path_type=pathlib.Path), help='The filepath specifies the address of the Model Infos file, which is obtained using the command: `younger logics ir create onnx retrieve huggingface --mode Model_Infos ...`.')
 @click.option('--save-dirpath',         required=True,  type=click.Path(exists=True, file_okay=False, dir_okay=True, path_type=pathlib.Path), help='The directory where the data will be saved.')
 @click.option('--cache-dirpath',        required=True,  type=click.Path(exists=True, file_okay=False, dir_okay=True, path_type=pathlib.Path), help='Cache directory, where data is volatile.')
@@ -134,10 +134,11 @@ def create_onnx_convert_huggingface(
 
     from younger_logics_ir.scripts.hubs.huggingface import convert
 
+    print(1111)
     convert.main(model_infos_filepath, save_dirpath, cache_dirpath, device=device, framework=framework, model_size_limit_l=model_size_limit_l, model_size_limit_r=model_size_limit_r, token=token)
 
 
-@create_onnx_convert.group(name='onnx')
+@create_onnx_convert.command(name='onnx')
 @click.option('--model-infos-filepath', required=True,  type=click.Path(exists=True, file_okay=True, dir_okay=False, path_type=pathlib.Path), help='The filepath specifies the address of the Model Infos file, which is obtained using the command: `younger logics ir create onnx retrieve onnx --mode Model_Infos ...`.')
 @click.option('--save-dirpath',         required=True,  type=click.Path(exists=True, file_okay=False, dir_okay=True, path_type=pathlib.Path), help='The directory where the data will be saved.')
 @click.option('--cache-dirpath',        required=True,  type=click.Path(exists=True, file_okay=False, dir_okay=True, path_type=pathlib.Path), help='Cache directory, where data is volatile.')
@@ -154,7 +155,7 @@ def create_onnx_convert_onnx(
     convert.main(model_infos_filepath, save_dirpath, cache_dirpath)
 
 
-@create_onnx_convert.group(name='torch')
+@create_onnx_convert.command(name='torch')
 @click.option('--model-infos-filepath', required=True,  type=click.Path(exists=True, file_okay=True, dir_okay=False, path_type=pathlib.Path), help='The filepath specifies the address of the Model Infos file, which is obtained using the command: `younger logics ir create onnx retrieve torch --mode Model_Infos ...`.')
 @click.option('--save-dirpath',         required=True,  type=click.Path(exists=True, file_okay=False, dir_okay=True, path_type=pathlib.Path), help='The directory where the data will be saved.')
 @click.option('--cache-dirpath',        required=True,  type=click.Path(exists=True, file_okay=False, dir_okay=True, path_type=pathlib.Path), help='Cache directory, where data is volatile.')
