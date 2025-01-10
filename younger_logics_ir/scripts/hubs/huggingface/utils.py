@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2025-01-06 22:23:12
+# Last Modified time: 2025-01-10 16:58:24
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -21,7 +21,7 @@ import pathlib
 import requests
 import multiprocessing.pool
 
-from typing import Any, Generator
+from typing import Any, Literal, Generator
 from huggingface_hub import utils, HfFileSystem, get_hf_file_metadata, hf_hub_url, scan_cache_dir
 from huggingface_hub.constants import HUGGINGFACE_HUB_CACHE
 
@@ -141,7 +141,7 @@ def get_huggingface_hub_task_ids(token: str | None = None) -> list[str]:
     return task_ids
 
 
-def get_huggingface_hub_model_infos(save_dirpath: pathlib.Path, token: str | None = None, number_per_file: int | None = None, worker_number: int | None = None) -> bool:
+def get_huggingface_hub_model_infos(save_dirpath: pathlib.Path, token: str | None = None, number_per_file: int | None = None, worker_number: int | None = None):
     models_path = f'{HUGGINGFACE_HUB_API_ENDPOINT}/models'
 
     cache_dirpath = YLIR_CACHE_ROOT.joinpath(f'retrieve_hf')
@@ -188,7 +188,7 @@ def get_huggingface_hub_model_infos(save_dirpath: pathlib.Path, token: str | Non
     logger.info(f' ^ Retrieved.')
 
 
-def get_huggingface_hub_metric_infos(save_dirpath: pathlib.Path, token: str | None = None) -> bool:
+def get_huggingface_hub_metric_infos(save_dirpath: pathlib.Path, token: str | None = None):
     metrics_path = f'{HUGGINGFACE_HUB_API_ENDPOINT}/metrics'
     metrics = get_all_data_from_huggingface_hub_api(metrics_path, token=token)
     metric_infos = [metric for metric in metrics]
@@ -197,7 +197,7 @@ def get_huggingface_hub_metric_infos(save_dirpath: pathlib.Path, token: str | No
     logger.info(f'Total {len(metric_infos)} Metric Infos. Results Saved In: \'{save_filepath}\'.')
 
 
-def get_huggingface_hub_task_infos(save_dirpath: pathlib.Path, token: str | None = None) -> bool:
+def get_huggingface_hub_task_infos(save_dirpath: pathlib.Path, token: str | None = None):
     tasks_path = f'{HUGGINGFACE_HUB_API_ENDPOINT}/tasks'
     tasks = get_all_data_from_huggingface_hub_api(tasks_path, token=token)
     task_infos = [task_info for task_id, task_info in tasks.items()]
@@ -340,3 +340,30 @@ def extract_possible_metrics_from_readme(readme: str) -> dict[str, list[str] | l
     possible_metrics['digit_related'] = extract_possible_digits_from_readme_string(readme)
     
     return possible_metrics
+
+
+##############################################################################################
+# vvv Below is the functions to handle the README.md files of models in Hugging Face Hub vvv #
+##############################################################################################
+
+
+def infer_supported_frameworks(model_info: dict) -> list[Literal['optimum', 'onnx', 'keras', 'tflite']]:
+    all_supported_frameworks = set(['optimum', 'onnx', 'keras', 'tflite'])
+    tags = set(model_info['tags'])
+    if len(tags & set(['transformers', 'diffusers', 'timm', 'sentence-transformers'])) == 0:
+        for sibling in model_info['siblings']:
+            filename = pathlib.Path(sibling['rfilename'])
+            if filename.suffix in ['.keras', '.hdf5', '.h5', '.pbtxt', '.pb']:
+                tags.add('keras')
+
+            if filename.suffix in ['.tflite']:
+                tags.add('tflite')
+
+            if filename.suffix in ['.onnx']:
+                tags.add('onnx')
+
+    else:
+        tags = tags.add('optimum')
+
+    supported_frameworks = list(tags & all_supported_frameworks)
+    return supported_frameworks

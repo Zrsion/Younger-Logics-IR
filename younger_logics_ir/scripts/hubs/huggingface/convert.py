@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2025-01-10 10:16:06
+# Last Modified time: 2025-01-10 17:00:49
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -36,7 +36,7 @@ from younger_logics_ir.commons.constants import YLIROriginHub
 
 from younger_logics_ir.scripts.commons.utils import get_onnx_opset_versions, get_onnx_model_opset_version
 
-from .utils import get_huggingface_hub_model_siblings, clean_huggingface_hub_model_cache
+from .utils import get_huggingface_hub_model_siblings, clean_huggingface_hub_model_cache, infer_supported_frameworks
 
 
 def clean_cache(model_id: str, cvt_cache_dirpath: pathlib.Path, ofc_cache_dirpath: pathlib.Path):
@@ -262,18 +262,18 @@ def convert_onnx(model_id: str, cvt_cache_dirpath: pathlib.Path, ofc_cache_dirpa
     return status, instances
 
 
-def get_model_infos_and_convert_method(model_infos_filepath: pathlib.Path, framework: Literal['optimum', 'onnx', 'keras'], model_size_limit: tuple[int, int]) -> tuple[list[dict[str, Any]], Callable[[str, pathlib.Path, pathlib.Path, Literal['cpu', 'cuda']], tuple[dict[str, dict[int, Any] | Literal['system_kill']], list[Instance]]]]:
+def get_model_infos_and_convert_method(model_infos_filepath: pathlib.Path, framework: Literal['optimum', 'onnx', 'keras', 'tflite'], model_size_limit: tuple[int, int]) -> tuple[list[dict[str, Any]], Callable[[str, pathlib.Path, pathlib.Path, Literal['cpu', 'cuda']], tuple[dict[str, dict[int, Any] | Literal['system_kill']], list[Instance]]]]:
     # This is the convert order.
-    supported_frameworks: list[str] = ['optimum', 'keras', 'onnx']
+    supported_frameworks: list[str] = ['optimum', 'keras', 'onnx', 'tflite']
     supported_convert_methods: dict[str, Callable[[str, pathlib.Path, pathlib.Path, Literal['cpu', 'cuda']], tuple[dict[str, dict[int, Any] | Literal['system_kill']], list[Instance]]]] = dict(
         optimum=convert_optimum,
         onnx=convert_onnx,
         keras=convert_keras,
-        # tflite=convert_tflite,
+        tflite=convert_tflite,
     )
 
-    def get_model_frameworks(model_tags: list[str]) -> Literal['optimum', 'onnx', 'keras']:
-        candidate_frameworks = set(model_tags) & set(supported_frameworks)
+    def get_model_frameworks(model_frameworks: list[Literal['optimum', 'onnx', 'keras', 'tflite']]) -> Literal['optimum', 'onnx', 'keras', 'tflite']:
+        candidate_frameworks = set(model_frameworks) & set(supported_frameworks)
         model_frameworks = list()
         for supported_framework in supported_frameworks:
             if supported_framework in candidate_frameworks:
@@ -282,7 +282,7 @@ def get_model_infos_and_convert_method(model_infos_filepath: pathlib.Path, frame
 
     model_infos: list[dict[str, Any]] = list()
     for model_info in load_json(model_infos_filepath):
-        model_frameworks = get_model_frameworks(model_info['tags'])
+        model_frameworks = get_model_frameworks(infer_supported_frameworks(model_info))
         if framework in model_frameworks and model_size_limit[0] <= model_info['usedStorage'] and model_info['usedStorage'] <= model_size_limit[1]:
             model_infos.append(model_info)
 
@@ -290,7 +290,7 @@ def get_model_infos_and_convert_method(model_infos_filepath: pathlib.Path, frame
     return model_infos, convert_method
 
 
-def get_convert_status_and_last_handled_model_id(sts_cache_dirpath: pathlib.Path, framework: Literal['optimum', 'onnx', 'keras'], model_size_limit: tuple[int, int]) -> tuple[list[dict[str, dict[int, Any]]], str | None]:
+def get_convert_status_and_last_handled_model_id(sts_cache_dirpath: pathlib.Path, framework: Literal['optimum', 'onnx', 'keras', 'tflite'], model_size_limit: tuple[int, int]) -> tuple[list[dict[str, dict[int, Any]]], str | None]:
     convert_status: dict[str, dict[int, Any]] = list()
     specific_status_filepath = sts_cache_dirpath.joinpath(f'{framework}_{model_size_limit[0]}_{model_size_limit[1]}.sts')
     if specific_status_filepath.is_file():
@@ -307,7 +307,7 @@ def get_convert_status_and_last_handled_model_id(sts_cache_dirpath: pathlib.Path
     return convert_status, last_handled_model_id
 
 
-def set_convert_status_last_handled_model_id(sts_cache_dirpath: pathlib.Path, framework: Literal['optimum', 'onnx', 'keras'], model_size_limit: tuple[int, int], convert_status: dict[str, dict[str, Any]], model_id: str):
+def set_convert_status_last_handled_model_id(sts_cache_dirpath: pathlib.Path, framework: Literal['optimum', 'onnx', 'keras', 'tflite'], model_size_limit: tuple[int, int], convert_status: dict[str, dict[str, Any]], model_id: str):
     convert_status_filepath = sts_cache_dirpath.joinpath(f'{framework}_{model_size_limit[0]}_{model_size_limit[1]}.sts')
     with open(convert_status_filepath, 'a') as convert_status_file:
         convert_status_file.write(f'{saves_json((model_id, convert_status))}\n')
@@ -321,7 +321,7 @@ def main(
     model_infos_filepath: pathlib.Path,
     save_dirpath: pathlib.Path, cache_dirpath: pathlib.Path,
     device: Literal['cpu', 'cuda'] = 'cpu',
-    framework: Literal['optimum', 'onnx', 'keras'] = 'optimum',
+    framework: Literal['optimum', 'onnx', 'keras', 'tflite'] = 'optimum',
     model_size_limit_l: int | None = None,
     model_size_limit_r: int | None = None,
     token: str | None = None,
@@ -338,7 +338,7 @@ def main(
     :param device: _description_, defaults to 'cpu'
     :type device: Literal[&#39;cpu&#39;, &#39;cuda&#39;], optional
     :param framework: _description_, defaults to 'optimum'
-    :type framework: Literal[&#39;optimum&#39;, &#39;onnx&#39;, &#39;keras&#39;], optional
+    :type framework: Literal[&#39;optimum&#39;, &#39;onnx&#39;, &#39;keras&#39;, &#39;tflite&#39;], optional
     :param model_size_limit_l: _description_, defaults to None
     :type model_size_limit_l: int | None, optional
     :param model_size_limit_r: _description_, defaults to None
@@ -358,9 +358,6 @@ def main(
     .. note::
         The Instances are saved into the directory named as 'Instances-HuggingFace-{Framework}' under the save_dirpath.
 
-    .. note::
-        This project will never support the conversion from TFLite to LogicX, because TensorFlow-ONNX converter only support python version from 3.7 to 3.10, and our project requires python version at least 3.11.
-        See: https://github.com/onnx/tensorflow-onnx
     """
 
     model_size_limit_l = model_size_limit_l or 0
