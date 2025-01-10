@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2025-01-10 23:41:43
+# Last Modified time: 2025-01-10 23:43:34
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -67,7 +67,7 @@ def convert_optimum(model_id: str, cvt_cache_dirpath: pathlib.Path, ofc_cache_di
 
     for onnx_opset_version in get_onnx_opset_versions():
         # The highest opset version supported by torch.onnx.export is 20
-        if onnx_opset_version < 14 or onnx_opset_version > 15:
+        if onnx_opset_version > 20:
             continue
         results_queue = multiprocessing.Queue()
         subprocess = multiprocessing.Process(target=safe_optimum_export, args=(model_id, cvt_cache_dirpath, ofc_cache_dirpath, onnx_opset_version, results_queue, device))
