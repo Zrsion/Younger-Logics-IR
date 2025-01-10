@@ -43,10 +43,10 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-scripts-hf = ["huggingface_hub", "tf2onnx"]
+scripts-hf = ["huggingface_hub", "torch", "tf2onnx", "optimum[exporters]", "transformers", "diffusers[torch]", "sentence-transformers", "timm"]
 scripts-ox = []
 scripts-tr = ["torch", "torchvision"]
-scripts = ["numpy", "pandas", "isocodes", "huggingface_hub", "tf2onnx", "torch", "torchvision"]
+scripts = ["numpy", "pandas", "isocodes", "huggingface_hub", "tf2onnx", "optimum[exporters]", "transformers", "diffusers[torch]", "sentence-transformers", "timm", "torch", "torchvision"]
 
 tools-vs = ["graphviz"]
 tools = ["graphviz"]
