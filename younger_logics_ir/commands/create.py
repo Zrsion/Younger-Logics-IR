@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2025-01-08 10:03:32
+# Last Modified time: 2025-01-10 09:37:21
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -119,22 +119,22 @@ def create_onnx_convert():
 @click.option('--save-dirpath',         required=True,  type=click.Path(exists=True, file_okay=False, dir_okay=True, path_type=pathlib.Path), help='The directory where the data will be saved.')
 @click.option('--cache-dirpath',        required=True,  type=click.Path(exists=True, file_okay=False, dir_okay=True, path_type=pathlib.Path), help='Cache directory, where data is volatile.')
 @click.option('--device',               required=False, type=click.Choice(['cpu', 'cuda'], case_sensitive=True), default='cpu', help='Used to indicate whether to use GPU or CPU when converting models.')
-@click.option('--framework',            required=False, type=click.Choice(['optimum', 'onnx', 'keras', 'tflite'], case_sensitive=True), default='optimum', help='Indicates the framework to which the model belonged prior to conversion.')
-@click.option('--model-size-limit-l',   required=False, type=int, default=3*1024*1024*1024, help='Used to filter out oversized models to prevent process interruptions due to excessive storage usage. (Note: The storage space occupied by models is a simple estimation and may have inaccuracies. Please use with caution.)')
+@click.option('--framework',            required=False, type=click.Choice(['optimum', 'onnx', 'keras'], case_sensitive=True), default='optimum', help='Indicates the framework to which the model belonged prior to conversion.')
+@click.option('--model-size-limit-l',   required=False, type=int, default=0, help='Used to filter out oversized models to prevent process interruptions due to excessive storage usage. (Note: The storage space occupied by models is a simple estimation and may have inaccuracies. Please use with caution.)')
 @click.option('--model-size-limit-r',   required=False, type=int, default=3*1024*1024*1024, help='Used to filter out oversized models to prevent process interruptions due to excessive storage usage. (Note: The storage space occupied by models is a simple estimation and may have inaccuracies. Please use with caution.)')
 @click.option('--token',                required=False, type=str, default=None, help='The HuggingFace token, which requires registering an account on HuggingFace and manually setting the access token. If None, retrieve without HuggingFace access token.')
 @click.option('--logging-filepath',     required=False, type=click.Path(exists=False, file_okay=True, dir_okay=False, path_type=pathlib.Path), default=None, help='Path to the log file; if not provided, defaults to outputting to the terminal only.')
 def create_onnx_convert_huggingface(
     model_infos_filepath,
     save_dirpath, cache_dirpath,
-    device, framework, model_size_threshold, token,
+    device, framework, model_size_limit_l, model_size_limit_r, token,
     logging_filepath
 ):
     equip_logger(logging_filepath)
 
     from younger_logics_ir.scripts.hubs.huggingface import convert
 
-    convert.main(model_infos_filepath, save_dirpath, cache_dirpath, device=device, framework=framework, model_size_threshold=model_size_threshold, token=token)
+    convert.main(model_infos_filepath, save_dirpath, cache_dirpath, device=device, framework=framework, model_size_limit_l=model_size_limit_l, model_size_limit_r=model_size_limit_r, token=token)
 
 
 @create_onnx_convert.group(name='onnx')
