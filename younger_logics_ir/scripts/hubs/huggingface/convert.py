@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2025-01-10 18:05:38
+# Last Modified time: 2025-01-10 20:46:49
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -46,22 +46,20 @@ def clean_cache(model_id: str, cvt_cache_dirpath: pathlib.Path, ofc_cache_dirpat
 
 def safe_optimum_export(model_id: str, cvt_cache_dirpath: pathlib.Path, ofc_cache_dirpath: pathlib.Path, results_queue: multiprocessing.Queue, device: str):
     from optimum.exporters.onnx import main_export
-    this_status: dict[int, Any] = dict()
+    this_status: dict[int, str | dict[str, str]] = dict()
     this_instances: list[Instance] = list()
-    for onnx_opset_version in get_onnx_opset_versions():
+    for onnx_opset_version in get_onnx_model_opset_version():
         try:
             main_export(model_id, cvt_cache_dirpath, opset=onnx_opset_version, device=device, cache_dir=ofc_cache_dirpath, monolith=True, do_validation=False, trust_remote_code=True, no_post_process=True)
-            this_status[onnx_opset_version] = dict()
-            for filepath in cvt_cache_dirpath.iterdir():
-                filename = filepath.name
-                if filepath.suffix == '.onnx':
-                    try:
-                        instance = Instance()
-                        instance.setup_logicx(convert(load_model(filename)))
-                        this_instances.append(instance)
-                        this_status[onnx_opset_version][filename] = 'success'
-                    except:
-                        this_status[onnx_opset_version][filename] = 'onnx2logicx_convert_error'
+            this_status[onnx_opset_version]['_exported_'] = dict()
+            for filepath in cvt_cache_dirpath.rglob('*.onnx'):
+                try:
+                    instance = Instance()
+                    instance.setup_logicx(convert(load_model(filepath)))
+                    this_instances.append(instance)
+                    this_status[onnx_opset_version][filepath] = 'success'
+                except:
+                    this_status[onnx_opset_version][filepath] = 'onnx2logicx_convert_error'
         except MemoryError as exception:
             this_status[onnx_opset_version] = 'optimum2onnx_oversize'
         except utils.RepositoryNotFoundError as exception:
@@ -73,9 +71,9 @@ def safe_optimum_export(model_id: str, cvt_cache_dirpath: pathlib.Path, ofc_cach
     results_queue.put((this_status, this_instances))
 
 
-def convert_optimum(model_id: str, cvt_cache_dirpath: pathlib.Path, ofc_cache_dirpath: pathlib.Path, device: Literal['cpu', 'cuda'] = 'cpu') -> tuple[dict[str, dict[int, Any] | Literal['system_kill']], list[Instance]]:
+def convert_optimum(model_id: str, cvt_cache_dirpath: pathlib.Path, ofc_cache_dirpath: pathlib.Path, device: Literal['cpu', 'cuda'] = 'cpu') -> tuple[dict[str, dict[int, str | dict[str, str]] | Literal['system_kill']], list[Instance]]:
     assert device in {'cpu', 'cuda'}
-    status: dict[str, dict[int, str] | Literal['system_kill']] = dict()
+    status: dict[str, dict[int, str | dict[str, str]] | Literal['system_kill']] = dict()
     instances: list[Instance] = list()
 
     results_queue = multiprocessing.Queue()
