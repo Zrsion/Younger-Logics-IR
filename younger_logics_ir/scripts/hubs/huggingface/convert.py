@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2025-01-10 10:04:00
+# Last Modified time: 2025-01-10 10:09:56
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -387,6 +387,7 @@ def main(
 
     # Status
     sts_cache_dirpath = cache_dirpath.joinpath(f'Cache-HFSts')
+    create_dir(sts_cache_dirpath)
     convert_status, last_handled_model_id = get_convert_status_and_last_handled_model_id(sts_cache_dirpath, framework, model_size_limit)
     number_of_converted_models = len(convert_status)
     logger.info(f'-> Previous Converted Models: {number_of_converted_models}')
