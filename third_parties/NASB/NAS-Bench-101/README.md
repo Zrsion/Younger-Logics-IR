@@ -10,7 +10,7 @@ To run this project, you need to have the following dependencies installed:
 
 First, install Younger-Logics-IR.
 ```bash
-pip install younger-logics-ir
+pip install younger-logics-ir[scripts]
 ```
 
 Next, install `nasbench_keras`.

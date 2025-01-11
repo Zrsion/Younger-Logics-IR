@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2025-01-10 23:43:34
+# Last Modified time: 2025-01-11 11:15:12
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -316,6 +316,7 @@ def main(
     model_size_limit_l: int | None = None,
     model_size_limit_r: int | None = None,
     token: str | None = None,
+    estimate: bool = False,
 ):
     """
     Retrieve Metadata of HuggingFace Models and Save Them Into Files.
@@ -360,6 +361,9 @@ def main(
     model_size_limit = (model_size_limit_l, model_size_limit_r)
 
     model_infos, convert_method = get_model_infos_and_convert_method(model_infos_filepath, framework, model_size_limit)
+    if estimate:
+        logger.info(f'Only Estimate. Models To Be Converted: {len(model_infos)}')
+        return
 
     # Instances
     instances_dirpath = save_dirpath.joinpath(f'Instances')
@@ -398,8 +402,6 @@ def main(
                 continue
 
             status, instances = convert_method(model_id, cvt_cache_dirpath, ofc_cache_dirpath, device)
-            set_convert_status_last_handled_model_id(sts_cache_dirpath, framework, model_size_limit, status, model_id)
-            clean_cache(model_id, cvt_cache_dirpath, ofc_cache_dirpath)
 
             model_owner, model_name = model_id.split('/')
             for instance_index, instance in enumerate(instances, start=1):
@@ -411,6 +413,9 @@ def main(
                     )
                 )
                 instance.save(instances_dirpath.joinpath(instance.unique))
+
+            set_convert_status_last_handled_model_id(sts_cache_dirpath, framework, model_size_limit, status, model_id)
+            clean_cache(model_id, cvt_cache_dirpath, ofc_cache_dirpath)
 
             progress_bar.set_description(f'Convert - {model_id}')
             progress_bar.update(1)
