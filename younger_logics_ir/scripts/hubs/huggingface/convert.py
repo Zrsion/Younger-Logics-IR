@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2025-01-11 11:15:12
+# Last Modified time: 2025-01-11 12:15:05
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -362,7 +362,7 @@ def main(
 
     model_infos, convert_method = get_model_infos_and_convert_method(model_infos_filepath, framework, model_size_limit)
     if estimate:
-        logger.info(f'Only Estimate. Models To Be Converted: {len(model_infos)}')
+        logger.info(f'Only Estimate. Models To Be Converted: {len(model_infos)}; Model Infos Filename: {model_infos_filepath.name}.')
         return
 
     # Instances
