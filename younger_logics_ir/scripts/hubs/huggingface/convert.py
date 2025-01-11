@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2025-01-11 12:15:05
+# Last Modified time: 2025-01-11 20:27:53
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -355,7 +355,7 @@ def main(
     model_size_limit_l = model_size_limit_l or 0
     logger.info(f'   Model Size Left Limit: {get_human_readable_size_representation(model_size_limit_l)}.')
 
-    model_size_limit_r = model_size_limit_r or 1024 * 1024 * 1024 * 1024
+    model_size_limit_r = model_size_limit_r or 1024 * 1024 * 1024 * 1024 * 1024
     logger.info(f'   Model Size Right Limit: {get_human_readable_size_representation(model_size_limit_r)}.')
 
     model_size_limit = (model_size_limit_l, model_size_limit_r)

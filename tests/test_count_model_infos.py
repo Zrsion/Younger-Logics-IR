@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2025-01-11 17:11:05
+# Last Modified time: 2025-01-11 21:36:57
 # Copyright (c) 2025 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -30,7 +30,7 @@ from younger_logics_ir.scripts.hubs.huggingface.convert import get_model_infos_a
 @click.option('--framework',            required=False, type=click.Choice(['optimum', 'onnx', 'keras', 'tflite'], case_sensitive=True), default='optimum', help='Indicates the framework to which the model belonged prior to conversion.')
 def main(model_infos_dirpath: pathlib.Path, save_filepath: pathlib.Path, model_infos_filename: str, framework: str):
     gb = 1024*1024*1024
-    model_size_limit_rs = [0.5, 1, 2, 4, 8, 12, 16, 32, 64]
+    model_size_limit_rs = [0.5, 1, 2, 4, 8, 12, 16, 32, 64, 1000, 1000*1000, 1000*1000*1000]
     cum_counts = dict()
     for model_size_limit_r in model_size_limit_rs:
         cum_counts[model_size_limit_r] = 0
