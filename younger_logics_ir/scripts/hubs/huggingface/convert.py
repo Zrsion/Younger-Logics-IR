@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2025-01-11 20:27:53
+# Last Modified time: 2025-01-12 22:51:46
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -24,7 +24,7 @@ from typing import Any, Literal, Callable
 
 from huggingface_hub import login, hf_hub_download, snapshot_download, utils
 
-from younger.commons.io import saves_json, loads_json, create_dir, delete_dir, get_human_readable_size_representation, load_json
+from younger.commons.io import saves_json, loads_json, save_json, load_json, create_dir, delete_dir, get_human_readable_size_representation
 from younger.commons.hash import hash_string
 from younger.commons.logging import logger
 
@@ -36,7 +36,7 @@ from younger_logics_ir.commons.constants import YLIROriginHub
 
 from younger_logics_ir.scripts.commons.utils import get_onnx_opset_versions, get_onnx_model_opset_version
 
-from .utils import get_huggingface_hub_model_siblings, clean_huggingface_hub_model_cache, infer_supported_frameworks
+from .utils import get_huggingface_hub_model_readme, get_huggingface_hub_model_siblings, clean_huggingface_hub_model_cache, infer_supported_frameworks
 
 
 def clean_cache(model_id: str, cvt_cache_dirpath: pathlib.Path, ofc_cache_dirpath: pathlib.Path):
@@ -369,6 +369,10 @@ def main(
     instances_dirpath = save_dirpath.joinpath(f'Instances')
     create_dir(instances_dirpath)
 
+    # READMES
+    readmes_dirpath = save_dirpath.joinpath(f'READMES')
+    create_dir(instances_dirpath)
+
     # Official
     ofc_cache_dirpath = cache_dirpath.joinpath(f'Cache-HFOfc')
     create_dir(ofc_cache_dirpath)
@@ -413,6 +417,16 @@ def main(
                     )
                 )
                 instance.save(instances_dirpath.joinpath(instance.unique))
+
+            try:
+                readme = get_huggingface_hub_model_readme(model_id, token=token)
+            except Exception as exception:
+                readme = ''
+
+            if readme == '':
+                pass
+            else:
+                save_json(readme, readmes_dirpath.joinpath(f'{model_owner}_{model_name}.json'))
 
             set_convert_status_last_handled_model_id(sts_cache_dirpath, framework, model_size_limit, status, model_id)
             clean_cache(model_id, cvt_cache_dirpath, ofc_cache_dirpath)
