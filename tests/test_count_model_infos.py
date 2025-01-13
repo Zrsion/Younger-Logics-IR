@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2025-01-11 21:36:57
+# Last Modified time: 2025-01-13 10:53:58
 # Copyright (c) 2025 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -35,7 +35,7 @@ def main(model_infos_dirpath: pathlib.Path, save_filepath: pathlib.Path, model_i
     for model_size_limit_r in model_size_limit_rs:
         cum_counts[model_size_limit_r] = 0
 
-    index = 1
+    index = 0
     model_infos_filepath = model_infos_dirpath.joinpath(f'{model_infos_filename}_{index}.json')
     while model_infos_filepath.is_file():
         index += 1
