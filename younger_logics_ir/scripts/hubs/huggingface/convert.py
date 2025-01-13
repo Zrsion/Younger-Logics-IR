@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2025-01-12 22:51:46
+# Last Modified time: 2025-01-13 17:34:57
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -426,7 +426,7 @@ def main(
             if readme == '':
                 pass
             else:
-                save_json(readme, readmes_dirpath.joinpath(f'{model_owner}_{model_name}.json'))
+                save_json(readme, readmes_dirpath.joinpath(f'{model_owner}_YLIR_{model_name}.json'))
 
             set_convert_status_last_handled_model_id(sts_cache_dirpath, framework, model_size_limit, status, model_id)
             clean_cache(model_id, cvt_cache_dirpath, ofc_cache_dirpath)
