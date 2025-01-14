@@ -21,6 +21,8 @@ converting nasbench models to Younger instances.
 '''
 
 import os
+os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
+
 import json
 import tqdm
 import click
@@ -92,10 +94,11 @@ def convert_pipeline(params):
         net.save(keras_model_filepath)
 
         # Convert the module to ONNX
-        onnx_model = safe_tflite_export(keras_model_filepath, onnx_model_filepath)
+        safe_tflite_export(keras_model_filepath, onnx_model_filepath)
 
+        # Convert the ONNX model to YLIR instance
         instance = Instance(
-            model=onnx_model,
+            model=onnx_model_filepath,
             labels=dict(
                 model_source='NAS-Bench-101',
                 model_name=model_id,
@@ -108,7 +111,7 @@ def convert_pipeline(params):
             )
         )
 
-        # Convert the ONNX model to YLIR instance
+        # Save the instance
         instance.save(instances_dirpath)
         keras_model_filepath.unlink(missing_ok=True)
         onnx_model_filepath.unlink(missing_ok=True)
