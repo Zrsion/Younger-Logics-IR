@@ -41,6 +41,7 @@ from younger.commons.logging import set_logger, use_logger, logger
 
 from younger.datasets.utils.convertors.tensorflow2onnx import main_export
 
+
 def safe_tflite_export(tflite_model_path: pathlib.Path, onnx_model_filepath: pathlib.Path):
     main_export(tflite_model_path, onnx_model_filepath, model_type='keras')
 
@@ -110,7 +111,10 @@ def convert_pipeline(params):
         # Convert the ONNX model to YLIR instance
         instance.save(instances_dirpath)
         keras_model_filepath.unlink(missing_ok=True)
-        # onnx_model_filepath.unlink(missing_ok=True)
+        print(keras_model_filepath)
+        onnx_model_filepath.unlink(missing_ok=True)
+        print(onnx_model_filepath)
+        print(1111)
         return True, model_id
     except Exception as exception:
         print(exception)
