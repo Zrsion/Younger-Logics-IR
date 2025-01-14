@@ -111,10 +111,8 @@ def convert_pipeline(params):
         # Convert the ONNX model to YLIR instance
         instance.save(instances_dirpath)
         keras_model_filepath.unlink(missing_ok=True)
-        print(keras_model_filepath)
         onnx_model_filepath.unlink(missing_ok=True)
-        print(onnx_model_filepath)
-        print(1111)
+                
         return True, model_id
     except Exception as exception:
         print(exception)
