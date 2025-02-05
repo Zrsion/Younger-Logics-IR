@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2025-02-05 14:55:37
+# Last Modified time: 2025-02-05 15:26:30
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -112,7 +112,7 @@ def safe_keras_export(keras_model_path: pathlib.Path, onnx_model_path: pathlib.P
 
 
 def convert_keras(model_id: str, cvt_cache_dirpath: pathlib.Path, ofc_cache_dirpath: pathlib.Path, device: Literal['cpu', 'cuda'] = 'cpu') -> tuple[dict[str, dict[int, Literal['success', 'convert_error', 'system_kill', 'logicx_error']]], list[Instance]]:
-    status: dict[str, dict[int, Literal['success', 'convert_error', 'logicx_error']]] = dict()
+    status: dict[str, Literal['access_deny'] | dict[int, Literal['success', 'convert_error', 'logicx_error']]] = dict()
     instances: list[Instance] = list()
     remote_keras_model_paths = list()
     for remote_keras_model_path in get_huggingface_hub_model_siblings(model_id, suffixes=['.keras', '.hdf5', '.h5', '.pbtxt', '.pb']):
@@ -124,10 +124,14 @@ def convert_keras(model_id: str, cvt_cache_dirpath: pathlib.Path, ofc_cache_dirp
 
     for remote_keras_model_path in remote_keras_model_paths:
         remote_keras_model_name = os.path.splitext(remote_keras_model_path)[0]
-        if os.path.isdir(remote_keras_model_path):
-            keras_model_path = pathlib.Path(snapshot_download(model_id, allow_patterns=f'{remote_keras_model_path}/*', cache_dir=ofc_cache_dirpath)).joinpath(remote_keras_model_path)
-        else:
-            keras_model_path = pathlib.Path(hf_hub_download(model_id, remote_keras_model_path, cache_dir=ofc_cache_dirpath))
+        try:
+            if os.path.isdir(remote_keras_model_path):
+                keras_model_path = pathlib.Path(snapshot_download(model_id, allow_patterns=f'{remote_keras_model_path}/*', cache_dir=ofc_cache_dirpath)).joinpath(remote_keras_model_path)
+            else:
+                keras_model_path = pathlib.Path(hf_hub_download(model_id, remote_keras_model_path, cache_dir=ofc_cache_dirpath))
+        except Exception as exception:
+            status[remote_keras_model_name] = 'access_deny'
+            continue
 
         status[remote_keras_model_name] = dict()
         onnx_model_path = cvt_cache_dirpath.joinpath(f'{hash_string(str(keras_model_path))}.onnx')
@@ -170,12 +174,16 @@ def safe_tflite_export(tflite_model_path: pathlib.Path, onnx_model_path: pathlib
 
 
 def convert_tflite(model_id: str, cvt_cache_dirpath: pathlib.Path, ofc_cache_dirpath: pathlib.Path, device: Literal['cpu', 'cuda'] = 'cpu') -> tuple[dict[str, dict[int, Literal['success', 'convert_error', 'system_kill', 'logicx_error']]], list[Instance]]:
-    status: dict[str, dict[int, Literal['success', 'convert_error', 'system_kill', 'logicx_error']]] = dict()
+    status: dict[str, Literal['access_deny'] | dict[int, Literal['success', 'convert_error', 'system_kill', 'logicx_error']]] = dict()
     instances: list[Instance] = list()
     remote_tflite_model_paths = get_huggingface_hub_model_siblings(model_id, suffixes=['.tflite'])
     for remote_tflite_model_path in remote_tflite_model_paths:
         remote_tflite_model_name = os.path.splitext(remote_tflite_model_path)[0]
-        tflite_model_path = pathlib.Path(hf_hub_download(model_id, remote_tflite_model_path, cache_dir=ofc_cache_dirpath))
+        try:
+            tflite_model_path = pathlib.Path(hf_hub_download(model_id, remote_tflite_model_path, cache_dir=ofc_cache_dirpath))
+        except Exception as exception:
+            status[remote_tflite_model_name] = 'access_deny'
+            continue
 
         status[remote_tflite_model_name] = dict()
         onnx_model_path = cvt_cache_dirpath.joinpath(f'{hash_string(str(tflite_model_path))}.onnx')
