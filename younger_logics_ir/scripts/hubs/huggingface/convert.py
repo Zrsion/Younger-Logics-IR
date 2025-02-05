@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2025-02-05 14:50:48
+# Last Modified time: 2025-02-05 14:55:37
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -184,7 +184,7 @@ def convert_tflite(model_id: str, cvt_cache_dirpath: pathlib.Path, ofc_cache_dir
             if onnx_opset_version < 14 or 18 < onnx_opset_version:
                 continue
             results_queue = multiprocessing.Queue()
-            subprocess = multiprocessing.Process(target=safe_tflite_export, args=(cvt_cache_dirpath, tflite_model_path, results_queue))
+            subprocess = multiprocessing.Process(target=safe_tflite_export, args=(tflite_model_path, onnx_model_path, onnx_opset_version, results_queue))
             subprocess.start()
             subprocess.join()
             if results_queue.empty():
