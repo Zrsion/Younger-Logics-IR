@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2025-01-13 17:34:57
+# Last Modified time: 2025-02-05 14:50:48
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -130,7 +130,7 @@ def convert_keras(model_id: str, cvt_cache_dirpath: pathlib.Path, ofc_cache_dirp
             keras_model_path = pathlib.Path(hf_hub_download(model_id, remote_keras_model_path, cache_dir=ofc_cache_dirpath))
 
         status[remote_keras_model_name] = dict()
-        onnx_model_path = cvt_cache_dirpath.joinpath(f'{hash_string(keras_model_path)}.onnx')
+        onnx_model_path = cvt_cache_dirpath.joinpath(f'{hash_string(str(keras_model_path))}.onnx')
         for onnx_opset_version in get_onnx_opset_versions():
             # tf2onnx only support 14 - 18 opset version
             if onnx_opset_version < 14 or 18 < onnx_opset_version:
@@ -178,7 +178,7 @@ def convert_tflite(model_id: str, cvt_cache_dirpath: pathlib.Path, ofc_cache_dir
         tflite_model_path = pathlib.Path(hf_hub_download(model_id, remote_tflite_model_path, cache_dir=ofc_cache_dirpath))
 
         status[remote_tflite_model_name] = dict()
-        onnx_model_path = cvt_cache_dirpath.joinpath(f'{hash_string(tflite_model_path)}.onnx')
+        onnx_model_path = cvt_cache_dirpath.joinpath(f'{hash_string(str(tflite_model_path))}.onnx')
         for onnx_opset_version in get_onnx_opset_versions():
             # tf2onnx only support 14 - 18 opset version
             if onnx_opset_version < 14 or 18 < onnx_opset_version:
