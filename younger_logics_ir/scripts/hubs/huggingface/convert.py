@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2025-02-06 09:13:46
+# Last Modified time: 2025-02-06 09:39:43
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -117,17 +117,17 @@ def convert_keras(model_id: str, cvt_cache_dirpath: pathlib.Path, ofc_cache_dirp
     remote_keras_model_paths = list()
     for remote_keras_model_path in get_huggingface_hub_model_siblings(model_id, suffixes=['.keras', '.hdf5', '.h5', '.pbtxt', '.pb']):
         if remote_keras_model_path.endswith('.pbtxt') or remote_keras_model_path.endswith('.pb'):
-            remote_keras_model_paths.append(os.path.dirname(remote_keras_model_path))
+            remote_keras_model_paths.append((os.path.dirname(remote_keras_model_path), 'D'))
         else:
-            remote_keras_model_paths.append(remote_keras_model_path)
+            remote_keras_model_paths.append((remote_keras_model_path, 'F'))
     remote_keras_model_paths = list(set(remote_keras_model_paths))
 
-    for remote_keras_model_path in remote_keras_model_paths:
+    for remote_keras_model_path, path_type in remote_keras_model_paths:
         remote_keras_model_name = os.path.splitext(remote_keras_model_path)[0]
         try:
-            if os.path.isdir(remote_keras_model_path):
+            if path_type == 'D':
                 keras_model_path = pathlib.Path(snapshot_download(model_id, allow_patterns=f'{remote_keras_model_path}/*', cache_dir=ofc_cache_dirpath)).joinpath(remote_keras_model_path)
-            else:
+            if path_type == 'F':
                 keras_model_path = pathlib.Path(hf_hub_download(model_id, remote_keras_model_path, cache_dir=ofc_cache_dirpath))
         except Exception as exception:
             status[remote_keras_model_name] = 'access_deny'
