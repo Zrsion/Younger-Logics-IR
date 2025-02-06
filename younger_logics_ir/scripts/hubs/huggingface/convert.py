@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2025-02-05 15:26:30
+# Last Modified time: 2025-02-06 09:13:46
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -424,7 +424,11 @@ def main(
                         download=model_info['downloadsAllTime'],
                     )
                 )
-                instance.save(instances_dirpath.joinpath(instance.unique))
+                instance_unique = instance.unique
+                try:
+                    instance.save(instances_dirpath.joinpath(instance_unique))
+                except FileExistsError as exception:
+                    logger.warning(f'-> Skip! Instance Already Exists: {instance_unique}')
 
             try:
                 readme = get_huggingface_hub_model_readme(model_id, token=token)
