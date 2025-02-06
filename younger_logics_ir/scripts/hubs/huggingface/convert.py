@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2025-02-06 09:39:43
+# Last Modified time: 2025-02-06 10:41:32
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -126,7 +126,8 @@ def convert_keras(model_id: str, cvt_cache_dirpath: pathlib.Path, ofc_cache_dirp
         remote_keras_model_name = os.path.splitext(remote_keras_model_path)[0]
         try:
             if path_type == 'D':
-                keras_model_path = pathlib.Path(snapshot_download(model_id, allow_patterns=f'{remote_keras_model_path}/*', cache_dir=ofc_cache_dirpath)).joinpath(remote_keras_model_path)
+                allowed_pattern = '*' if remote_keras_model_path == '' else f'{remote_keras_model_path}/*'
+                keras_model_path = pathlib.Path(snapshot_download(model_id, allow_patterns=allowed_pattern, cache_dir=ofc_cache_dirpath)).joinpath(remote_keras_model_path)
             if path_type == 'F':
                 keras_model_path = pathlib.Path(hf_hub_download(model_id, remote_keras_model_path, cache_dir=ofc_cache_dirpath))
         except Exception as exception:
