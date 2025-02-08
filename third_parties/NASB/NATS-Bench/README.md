@@ -21,6 +21,13 @@ Next, install `nats_bench`.
 pip install nats_bench
 ```
 
+Last, install `AutoDL-Projects`:
+```bash
+git clone https://github.com/D-X-Y/AutoDL-Projects.git
+cd path/to/AutoDL-Projects
+pip install -e .
+```
+
 After installing the required packages, you can run the conversion code `convert.py`.
 
 The `model-infos-dirpath` must be set to either `NATS-tss-v1_0-3ffb9-simple` or `NATS-sss-v1_0-50262-simple` (topology or size). Download the (unpacked benchmark file) archive from [https://github.com/google-research/nasbench
