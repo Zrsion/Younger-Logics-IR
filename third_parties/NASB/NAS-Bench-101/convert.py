@@ -6,7 +6,7 @@
 # Author: Luzhou Peng (彭路洲) & Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2025-02-07 11:03:37
+# Last Modified time: 2025-02-10 15:08:14
 # Copyright (c) 2025 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -145,9 +145,10 @@ def main(
     set_logger('NAS-Bench-101_Convert', mode='console', level='INFO')
     use_logger('NAS-Bench-101_Convert')
 
-    model_infos = load_json(model_infos_filepath)[start_index:end_index]
+    model_infos = load_json(model_infos_filepath)
     start_index = start_index or 0
     end_index = end_index or len(model_infos)
+    model_infos = model_infos[start_index:end_index]
 
     # Instances
     instances_dirpath = save_dirpath.joinpath(f'Instances')

@@ -22,7 +22,7 @@ pip install -e .
 
 After installing the required packages, you can run the conversion code `convert.py`.
 
-The `model-infos-path` must be set to `NAS-Bench-101_Model_Infos.json`. The `NAS-Bench-101_Model_Infos.json` can be generated using the official NASBench101 code.
+The `model-infos-filepath` must be set to `NAS-Bench-101_Model_Infos.json`. The `NAS-Bench-101_Model_Infos.json` can be generated using the official NASBench101 code.
 
 Run command as below:
 ```bash
