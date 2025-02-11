@@ -2,11 +2,11 @@
 # -*- encoding=utf8 -*-
 
 ########################################################################
-# Created time: 2025-02-08 15:22:44
+# Created time: 2025-02-11 11:20:00
 # Author: Luzhou Peng (彭路洲) & Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2025-02-11 09:16:57
+# Last Modified time: 2025-02-08 18:13:00
 # Copyright (c) 2025 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -15,11 +15,11 @@
 
 
 '''
-This project is based on the repositorys "NATS-Bench" (https://github.com/D-X-Y/NATS-Bench) 
-and AutoDL-Projects (https://github.com/D-X-Y/AutoDL-Projects), 
-with modifications for converting NATS-Bench models to Younger instances.
+This project is based on the repositorys "ppuda" (https://github.com/facebookresearch/ppuda), 
+with modifications for converting DeepNets-1M models to Younger instances.
 '''
 
+import os
 import onnx
 import torch
 import tqdm
@@ -28,34 +28,42 @@ import pathlib
 import multiprocessing
 
 from typing import Any
+from google.protobuf import text_format
 
-from nats_bench import create
-from xautodl.models import get_cell_based_tiny_net
+from ppuda.deepnets1m.net import Network
 
 from younger.commons.io import loads_json, saves_json, create_dir
 from younger.commons.logging import set_logger, use_logger, logger
 
-from younger_logics_ir.modules import Instance, Origin, Implementation, LogicX
+from younger_logics_ir.modules import Instance, Origin, Implementation
 from younger_logics_ir.converters import convert
 from younger_logics_ir.commons.constants import YLIROriginHub
 
-def convert_pipeline(params):
-    model_id, cvt_cache_dirpath, instances_dirpath, opset, api, candidate, search_space_type = params
-    onnx_model_filepath = cvt_cache_dirpath.joinpath(f'{model_id}.onnx')
-    if search_space_type == 'tss':
-        owner = 'NAS-Bench-201'
-    if search_space_type == 'sss':
-        owner = 'NATS-Bench'
 
+def save_protobuf(path, message, as_text=False):
+    dir_name = os.path.dirname(path)
+    if dir_name:
+        os.makedirs(dir_name, exist_ok=True)
+    if as_text:
+        with open(path, "w") as f:
+            f.write(text_format.MessageToString(message))
+    else:
+        with open(path, "wb") as f:
+            f.write(message.SerializeToString())
+
+
+def convert_pipeline(params):
+    model_id, net_args, cvt_cache_dirpath, instances_dirpath, opset = params
+    onnx_model_filepath = cvt_cache_dirpath.joinpath(f'{model_id}.onnx')
     try:
         # Create network
         dummy_input = torch.randn(1, 3, 32, 32) 
-        config = api.get_net_config(candidate, 'cifar10')
-        net = get_cell_based_tiny_net(config)
+        net = Network(num_classes=10,
+                    is_imagenet_input=False,
+                    **net_args).eval()
 
         # Convert the network to ONNX
         torch.onnx.export(net, dummy_input, onnx_model_filepath, verbose=False, opset_version=opset)
-        print('opset:', opset)
 
         # Convert the ONNX model to YLIR instance
         onnx_model = onnx.load(onnx_model_filepath)
@@ -63,14 +71,15 @@ def convert_pipeline(params):
         instance.setup_logicx(convert(onnx_model))
         instance.insert_label(
             Implementation(
-                origin = Origin(YLIROriginHub.NAS, owner, model_id)
+                origin = Origin(YLIROriginHub.NAS, f'DeepNets-1M', model_id)
             )
         )
         instance.save(instances_dirpath.joinpath(instance.unique))
         onnx_model_filepath.unlink(missing_ok=True)
+
         return True, model_id 
     except Exception as exception:
-        # print(f'Error: {model_id} - {exception}')
+        print(f'Error: {model_id} - {exception}')
         return False, model_id
 
 
@@ -102,62 +111,57 @@ def set_convert_status_last_handled_model_id(sts_cache_dirpath: pathlib.Path, st
 
 
 @click.command()
-@click.option('--model-infos-dirpath', required=True,  type=click.Path(exists=True, file_okay=True, dir_okay=True, path_type=str), help='The directory specifies the address of the Model Infos file, which is obtained using the command: `younger logics ir create onnx retrieve huggingface --mode Model_Infos ...`.')
+@click.option('--model-infos-filepath', required=True,  type=click.Path(exists=True, file_okay=True, dir_okay=True, path_type=str), help='The Dir specifies the address of the Model Infos file, which is obtained using the command: `younger logics ir create onnx retrieve huggingface --mode Model_Infos ...`.')
 @click.option('--save-dirpath',         required=True,  type=click.Path(exists=True, file_okay=False, dir_okay=True, path_type=pathlib.Path), help='The directory where the data will be saved.')
 @click.option('--cache-dirpath',        required=True,  type=click.Path(exists=True, file_okay=False, dir_okay=True, path_type=pathlib.Path), help='Cache directory, where data is volatile.')
-@click.option('--search-space-type',    required=True,  type=click.Choice(['tss', 'sss']), help='The type of search space, either topology (tss) or size (sss).')
 @click.option('--opset',                required=True,  type=int, help='Used to indicate which opset version the model needs to be converted to in the ONNX format.')
 @click.option('--start-index',          required=False, type=int, default=None, help='Used to indicate the position of the model in the model_infos list where the conversion starts.')
 @click.option('--end-index',            required=False, type=int, default=None, help='Used to indicate the position of the model in the model_infos list where the conversion ends (the index are excluded).')
 @click.option('--worker-number',        required=False, type=int, default=1, help='Used to indicate how many processes are concurrently performing the model conversion tasks.')
 def main(
-    model_infos_dirpath,
+    model_infos_filepath,
     save_dirpath, cache_dirpath,
-    search_space_type,
     opset,
     start_index, end_index,
     worker_number,
 ):
-    api = create(model_infos_dirpath, search_space_type, fast_mode=True, verbose=True)
-
-    if search_space_type == 'tss':
-        set_logger(f'NAS-Bench-201_Convert', mode='console', level='INFO')
-        use_logger(f'NAS-Bench-201_Convert')
-        candidates = list(range(15625))
-    if search_space_type == 'sss':
-        set_logger(f'NATS-Bench_Convert', mode='console', level='INFO')
-        use_logger(f'NATS-Bench_Convert')
-        candidates = list(range(32768))
-    start_index = start_index or 0
-    end_index = end_index or len(candidates)
-    candidates = candidates[start_index:end_index]
+    set_logger(f'DeepNets-1M_Convert', mode='console', level='INFO')
+    use_logger(f'DeepNets-1M_Convert')
 
     # Instances
     instances_dirpath = save_dirpath.joinpath(f'Instances')
     create_dir(instances_dirpath)
 
     # Convert
-    cvt_cache_dirpath = cache_dirpath.joinpath(f'Cache-NATSBCvt')
+    cvt_cache_dirpath = cache_dirpath.joinpath(f'Cache-NATSCvt')
     create_dir(cvt_cache_dirpath)
 
     # Status
-    sts_cache_dirpath = cache_dirpath.joinpath(f'Cache-NATSBSts')
+    sts_cache_dirpath = cache_dirpath.joinpath(f'Cache-NATSSts')
     create_dir(sts_cache_dirpath)
+                                 
+    model_infos = torch.load(model_infos_filepath)
+    assert isinstance(model_infos, list)
+    
+    start_index = start_index or 0
+    end_index = end_index or len(model_infos)
+    print('length of model_infos: ', len(model_infos))
+    model_infos = model_infos[start_index:end_index]
 
     convert_status, last_handled_model_id = get_convert_status_and_last_handled_model_id(sts_cache_dirpath, start_index, end_index)
 
     logger.info(f'Packaging Parameters For Conversion ...')
     params = list()
-    with tqdm.tqdm(total=len(candidates), desc='Packaging Params') as progress_bar:
-        for candidate in candidates:
-            model_id = str(candidate)
+    with tqdm.tqdm(total=len(model_infos), desc='Packaging Params') as progress_bar:
+        for (idx, net_args) in model_infos:
+            model_id = str(idx)
             if last_handled_model_id is not None:
                 if model_id == last_handled_model_id:
                     last_handled_model_id = None
                 progress_bar.set_description(f'Converted, Skip - {model_id}')
                 progress_bar.update(1)
                 continue
-            params.append((model_id, cvt_cache_dirpath, instances_dirpath, opset, api, candidate, search_space_type))
+            params.append((model_id, net_args, cvt_cache_dirpath, instances_dirpath, opset))
             progress_bar.update(1)
 
     with multiprocessing.Pool(worker_number) as pool:
