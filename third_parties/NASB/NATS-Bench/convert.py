@@ -6,7 +6,7 @@
 # Author: Luzhou Peng (彭路洲) & Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2025-02-10 15:28:10
+# Last Modified time: 2025-02-11 09:16:57
 # Copyright (c) 2025 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -20,7 +20,6 @@ and AutoDL-Projects (https://github.com/D-X-Y/AutoDL-Projects),
 with modifications for converting NATS-Bench models to Younger instances.
 '''
 
-import os
 import onnx
 import torch
 import tqdm
@@ -29,7 +28,6 @@ import pathlib
 import multiprocessing
 
 from typing import Any
-from google.protobuf import text_format
 
 from nats_bench import create
 from xautodl.models import get_cell_based_tiny_net
@@ -69,7 +67,7 @@ def convert_pipeline(params):
             )
         )
         instance.save(instances_dirpath.joinpath(instance.unique))
-        # onnx_model_filepath.unlink(missing_ok=True)
+        onnx_model_filepath.unlink(missing_ok=True)
         return True, model_id 
     except Exception as exception:
         # print(f'Error: {model_id} - {exception}')

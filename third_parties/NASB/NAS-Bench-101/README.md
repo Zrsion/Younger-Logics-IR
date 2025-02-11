@@ -26,7 +26,7 @@ The `model-infos-filepath` must be set to `NAS-Bench-101_Model_Infos.json`. The 
 
 Run command as below:
 ```bash
-TF_CPP_MIN_LOG_LEVEL=3 python convert.py --model-infos-filepath /path/to/NAS-Bench-101_Model_Infos.json --save-dirpath /path/to/save --cache-dirpath /path/to/cache --start-index 0 --end-index 10 --opset 15
+TF_CPP_MIN_LOG_LEVEL=3 python convert.py --model-infos-filepath /path/to/NAS-Bench-101_Model_Infos.json --save-dirpath /path/to/save --cache-dirpath /path/to/cache --start-index 0 --end-index 10 --opset 18
 ```
 
 *NOTE*: The conversion time can be reduced if logging messages are suppressed by setting `TF_CPP_MIN_LOG_LEVEL=3`
