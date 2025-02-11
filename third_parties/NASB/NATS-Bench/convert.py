@@ -6,7 +6,7 @@
 # Author: Luzhou Peng (彭路洲) & Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2025-02-11 09:16:57
+# Last Modified time: 2025-02-11 14:22:21
 # Copyright (c) 2025 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -35,9 +35,10 @@ from xautodl.models import get_cell_based_tiny_net
 from younger.commons.io import loads_json, saves_json, create_dir
 from younger.commons.logging import set_logger, use_logger, logger
 
-from younger_logics_ir.modules import Instance, Origin, Implementation, LogicX
+from younger_logics_ir.modules import Instance, Origin, Implementation
 from younger_logics_ir.converters import convert
 from younger_logics_ir.commons.constants import YLIROriginHub
+
 
 def convert_pipeline(params):
     model_id, cvt_cache_dirpath, instances_dirpath, opset, api, candidate, search_space_type = params
@@ -55,7 +56,7 @@ def convert_pipeline(params):
 
         # Convert the network to ONNX
         torch.onnx.export(net, dummy_input, onnx_model_filepath, verbose=False, opset_version=opset)
-        print('opset:', opset)
+        # print('opset:', opset)
 
         # Convert the ONNX model to YLIR instance
         onnx_model = onnx.load(onnx_model_filepath)

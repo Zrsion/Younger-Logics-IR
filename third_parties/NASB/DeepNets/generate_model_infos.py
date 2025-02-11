@@ -22,7 +22,7 @@ def main(
     data_dir,
     interval,
     split,
-): 
+):
     added_graphs = set() 
     graphs_queue = DeepNets1M.loader(split=split,
                                     nets_dir=data_dir,
