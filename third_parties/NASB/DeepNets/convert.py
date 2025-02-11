@@ -15,7 +15,7 @@
 
 
 '''
-This project is based on the repositorys "ppuda" (https://github.com/facebookresearch/ppuda.git), 
+This project is based on the repositorys "ppuda" (https://github.com/facebookresearch/ppuda), 
 with modifications for converting DeepNets-1M models to Younger instances.
 '''
 
@@ -111,7 +111,7 @@ def set_convert_status_last_handled_model_id(sts_cache_dirpath: pathlib.Path, st
 
 
 @click.command()
-@click.option('--model-infos-filepath',  required=True,  type=click.Path(exists=True, file_okay=True, dir_okay=True, path_type=str), help='The Dir specifies the address of the Model Infos file, which is obtained using the command: `younger logics ir create onnx retrieve huggingface --mode Model_Infos ...`.')
+@click.option('--model-infos-filepath', required=True,  type=click.Path(exists=True, file_okay=True, dir_okay=True, path_type=str), help='The Dir specifies the address of the Model Infos file, which is obtained using the command: `younger logics ir create onnx retrieve huggingface --mode Model_Infos ...`.')
 @click.option('--save-dirpath',         required=True,  type=click.Path(exists=True, file_okay=False, dir_okay=True, path_type=pathlib.Path), help='The directory where the data will be saved.')
 @click.option('--cache-dirpath',        required=True,  type=click.Path(exists=True, file_okay=False, dir_okay=True, path_type=pathlib.Path), help='Cache directory, where data is volatile.')
 @click.option('--opset',                required=True,  type=int, help='Used to indicate which opset version the model needs to be converted to in the ONNX format.')
