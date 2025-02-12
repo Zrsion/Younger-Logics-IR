@@ -13,11 +13,11 @@ First, install Younger-Logics-IR.
 pip install younger-logics-ir[scripts]
 ```
 
-Next, install `nasbench_keras`.
+Next, install `nasbench_keras`. (**NOTE** TensorFlow must be set to version 2.15.0)
 ```bash
-git clone https://github.com/Yangs-AI/Younger-Logics-IR.git
-cd Younger-Logics-IR/third_parties/NASB/NAS-Bench-101
-pip install -e .
+git clone https://github.com/evgps/nasbench_keras.git
+cd nasbench_keras
+pip3 install -e .
 ```
 
 After installing the required packages, you can run the conversion code `convert.py`.
