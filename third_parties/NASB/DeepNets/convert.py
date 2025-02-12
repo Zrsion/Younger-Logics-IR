@@ -6,7 +6,7 @@
 # Author: Luzhou Peng (彭路洲) & Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2025-02-08 18:13:00
+# Last Modified time: 2025-02-12 10:26:40
 # Copyright (c) 2025 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -139,10 +139,10 @@ def main(
     # Status
     sts_cache_dirpath = cache_dirpath.joinpath(f'Cache-NATSSts')
     create_dir(sts_cache_dirpath)
-                                 
+
     model_infos = torch.load(model_infos_filepath)
     assert isinstance(model_infos, list)
-    
+
     start_index = start_index or 0
     end_index = end_index or len(model_infos)
     print('length of model_infos: ', len(model_infos))
