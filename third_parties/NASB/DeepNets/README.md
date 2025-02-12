@@ -27,7 +27,7 @@ To accelerate and simplify the conversion process, run `generate_model_infos.py`
 
 Run command as below:
 ```bash
-python generate_model_infos.py --save-dir path/to/save/model_infos --data-dir path/to/ppuda_data --interval 50000 --split train
+python generate_model_infos.py --save-dirpath path/to/save/model_infos --data-dirpath path/to/ppuda_data --interval 50000 --split train
 ```
 
 After generating the `model_infos`, you can run the conversion code `convert.py`.
