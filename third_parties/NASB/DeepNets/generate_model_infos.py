@@ -37,7 +37,7 @@ def main(
 
     point = 0
     points = list()
-    for i in range(quotient):
+    for i in range(split_number):
         point = point + quotient + (1 if i < remainder else 0)
         points.append(point)
     print(points)
