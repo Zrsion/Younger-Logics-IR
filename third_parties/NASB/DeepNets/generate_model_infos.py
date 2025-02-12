@@ -10,7 +10,7 @@ import tqdm
 from ppuda.deepnets1m.loader import DeepNets1M
 from ppuda.utils import set_seed
 
-set_seed(1111) # To be consistent with config.py of ppuda 
+set_seed(1111) # To be consistent with config.py of ppuda
 
 
 @click.command()
@@ -22,7 +22,7 @@ def main(
     data_dirpath,
     split_number,
 ):
-    added_graphs = set() 
+    added_graphs = set()
     graphs_queue = DeepNets1M.loader(split='train',
                                     nets_dir=data_dirpath,
                                     large_images=False,
@@ -32,8 +32,7 @@ def main(
     quotient, remainder = divmod(len(graphs_queue), split_number)
 
     model_info_list = []
-    save_id = 0
-    print('len(graphs_queue): ', len(graphs_queue))    
+    print('len(graphs_queue): ', len(graphs_queue))
 
     point = 0
     points = list()
@@ -50,8 +49,9 @@ def main(
 
         if index >= points[split_id]:
             model_info_list.sort(key=lambda x: x[0])
-            torch.save(model_info_list, save_dirpath.joinpath(f'DeepNets-1M_Model_Infos_{save_id}.pth'))
-            model_info_list.clear() 
+            torch.save(model_info_list, save_dirpath.joinpath(f'DeepNets-1M_Model_Infos_{split_id}.pth'))
+            print(f'Split No.{split_id} Saved')
+            model_info_list.clear()
             split_id += 1
             gc.collect()
 
