@@ -23,16 +23,16 @@ cd path/to/ppuda
 pip install -e .
 ```
 
-To accelerate and simplify the conversion process, run `generate_model_infos.py` to generate `model_infos`. The `data-dir` should contain dataset files download from [ppuda/data/download.sh](https://github.com/facebookresearch/ppuda/blob/main/data/download.sh) in `ppuda`. The train split corresponds to DeepNets-1M dataset.
+To accelerate and simplify the conversion process, run `generate_model_infos.py` to generate `DeepNets-1M_Model_Infos_${i}.pth`. The `data-dir` should contain dataset files download from [ppuda/data/download.sh](https://github.com/facebookresearch/ppuda/blob/main/data/download.sh) in `ppuda`. The train split corresponds to DeepNets-1M dataset.
 
 Run command as below:
 ```bash
 python generate_model_infos.py --save-dirpath path/to/save/model_infos --data-dirpath path/to/ppuda_data --interval 50000 --split train
 ```
 
-After generating the `model_infos`, you can run the conversion code `convert.py`.
+After generating the `DeepNets-1M_Model_Infos_${i}.pth`, you can run the conversion code `convert.py`.
 
 Run command as below:
 ```bash
-python convert.py --model-infos-dirpath /path/to/model_infos --save-dirpath /path/to/save --cache-dirpath /path/to/cache --start-index 0 --end-index 10 --opset 18 --worker-number 8
+python convert.py --model-infos-filepath /path/to/DeepNets-1M_Model_Infos_${i}.pth --save-dirpath /path/to/save --cache-dirpath /path/to/cache --start-index 0 --end-index 10 --opset 18 --worker-number 8
 ```
