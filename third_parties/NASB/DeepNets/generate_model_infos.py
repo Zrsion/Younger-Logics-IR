@@ -59,6 +59,14 @@ def main(
         assert not net_idx in added_graphs
         added_graphs.add(net_idx)
 
+    if len(model_info_list) != 0:
+        model_info_list.sort(key=lambda x: x[0])
+        torch.save(model_info_list, save_dirpath.joinpath(f'DeepNets-1M_Model_Infos_{split_id}.pth'))
+        print(f'Split No.{split_id} Saved')
+        model_info_list.clear()
+        split_id += 1
+        gc.collect()
+
     print('len(added_graps) and len(graphs_queue): ', len(added_graphs), ' and ', len(graphs_queue))
     assert len(added_graphs) == len(graphs_queue)
 
