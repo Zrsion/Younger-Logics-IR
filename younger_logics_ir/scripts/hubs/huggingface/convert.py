@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2025-02-06 10:41:32
+# Last Modified time: 2025-02-13 20:57:13
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -232,7 +232,11 @@ def convert_onnx(model_id: str, cvt_cache_dirpath: pathlib.Path, ofc_cache_dirpa
     remote_onnx_model_paths = get_huggingface_hub_model_siblings(model_id, suffixes=['.onnx'])
     for remote_onnx_model_path in remote_onnx_model_paths:
         remote_onnx_model_name = os.path.splitext(remote_onnx_model_path)[0]
-        onnx_model_path = pathlib.Path(hf_hub_download(model_id, remote_onnx_model_path, cache_dir=ofc_cache_dirpath))
+        try:
+            onnx_model_path = pathlib.Path(hf_hub_download(model_id, remote_onnx_model_path, cache_dir=ofc_cache_dirpath))
+        except Exception as exception:
+            status[remote_onnx_model_name] = 'access_deny'
+            continue
 
         status[remote_onnx_model_name] = dict()
         onnx_model = load_model(onnx_model_path)
