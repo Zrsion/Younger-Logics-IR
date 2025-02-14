@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2025-02-14 10:25:49
+# Last Modified time: 2025-02-14 10:30:32
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -239,13 +239,19 @@ def convert_onnx(model_id: str, cvt_cache_dirpath: pathlib.Path, ofc_cache_dirpa
             continue
 
         status[remote_onnx_model_name] = dict()
+
         try:
             onnx_model = load_model(onnx_model_path)
         except Exception as exception:
             status[remote_onnx_model_name] = 'onnx_load_error'
             continue
 
-        onnx_model_opset_version = get_onnx_model_opset_version(onnx_model)
+        try:
+            onnx_model_opset_version = get_onnx_model_opset_version(onnx_model)
+        except Exception as exception:
+            status[remote_onnx_model_name] = 'onnx_opset_error'
+            continue
+
         for onnx_opset_version in get_onnx_opset_versions():
             if onnx_opset_version == onnx_model_opset_version:
                 continue
