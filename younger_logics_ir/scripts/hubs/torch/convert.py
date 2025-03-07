@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2025-01-03 16:28:25
+# Last Modified time: 2025-03-07 15:59:58
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -14,7 +14,6 @@
 ########################################################################
 
 
-import onnx
 import tqdm
 import torch
 import pathlib
@@ -34,49 +33,45 @@ from younger_logics_ir.scripts.commons.utils import get_onnx_opset_versions
 from .utils import get_torch_hub_model_input, get_torch_hub_model_model_instance
 
 
-def safe_torch_export(cvt_cache_dirpath: pathlib.Path, model_id: str, results_queue: multiprocessing.Queue):
-    this_status: dict[int, str] = dict()
-    this_instances: list[Instance] = list()
+def safe_torch_export(model_id: str, onnx_model_path: pathlib.Path, onnx_opset_version, results_queue: multiprocessing.Queue):
     model = get_torch_hub_model_model_instance(model_id)
     model_input = get_torch_hub_model_input(model_id)
-    for onnx_opset_version in get_onnx_opset_versions():
-        onnx_model_path = str(cvt_cache_dirpath.joinpath(f'model_opset_v{onnx_opset_version}.onnx'))
-        try:
-            torch.onnx.export(model, model_input, onnx_model_path, verbose=True)
-            onnx_model = load_model(onnx_model_path)
-            try:
-                instance = Instance()
-                instance.setup_logicx(convert(onnx_model))
-                this_instances.append(instance)
-                this_status[onnx_opset_version] = 'success'
-            except Exception as exception:
-                this_status[onnx_opset_version] = 'onnx2logicx_convert_error'
-        except Exception as exception:
-            this_status[onnx_opset_version] = 'torch2onnx_convert_error'
-        delete_dir(cvt_cache_dirpath, only_clean=True)
+    try:
+        torch.onnx.export(model, model_input, onnx_model_path, opset_version=onnx_opset_version, verbose=True)
+        this_status = 'success'
+    except Exception as exception:
+        this_status = 'convert_error'
 
-    results_queue.put((this_status, this_instances))
+    results_queue.put(this_status)
 
 
 def convert_torch(model_id: str, cvt_cache_dirpath: pathlib.Path) -> tuple[dict[str, dict[int, Any] | Literal['system_kill']], list[Instance]]:
     status: dict[str, dict[int, str] | Literal['system_kill']] = dict()
     instances: list[Instance] = list()
 
-    results_queue = multiprocessing.Queue()
-    subprocess = multiprocessing.Process(target=safe_torch_export, args=(cvt_cache_dirpath, model_id, results_queue))
-    subprocess.start()
-    subprocess.join()
-    if results_queue.empty():
-        this_status = 'system_kill'
-        this_instances = list()
-    else:
-        # this_status: dict[int, str]
-        # this_instances: list[Instance]
-        this_status, this_instances = results_queue.get()
+    for onnx_opset_version in get_onnx_opset_versions():
+        onnx_model_path = str(cvt_cache_dirpath.joinpath(f'model_opset_v{onnx_opset_version}.onnx'))
+        results_queue = multiprocessing.Queue()
+        subprocess = multiprocessing.Process(target=safe_torch_export, args=(model_id, onnx_model_path, onnx_opset_version, results_queue))
+        subprocess.start()
+        subprocess.join()
+        if results_queue.empty():
+            this_status = 'system_kill'
+        else:
+            # this_status: dict[int, str]
+            # this_instances: list[Instance]
+            this_status = results_queue.get()
+            if this_status == 'success':
+                try:
+                    instance = Instance()
+                    instance.setup_logicx(convert(load_model(onnx_model_path)))
+                    instances.append(instance)
+                except Exception as exception:
+                    this_status = 'logicx_error'
 
-    status['main_model'] = this_status
-    instances.extend(this_instances)
+        status[model_id][onnx_opset_version] = this_status
 
+    delete_dir(cvt_cache_dirpath, only_clean=True)
     return status, instances
 
 
@@ -127,6 +122,7 @@ def main(
 
     # Status
     sts_cache_dirpath = cache_dirpath.joinpath(f'Cache-TRSts')
+    create_dir(sts_cache_dirpath)
     convert_status, last_handled_model_id = get_convert_status_and_last_handled_model_id(sts_cache_dirpath)
     number_of_converted_models = len(convert_status)
     logger.info(f'-> Previous Converted Models: {number_of_converted_models}')
@@ -152,19 +148,23 @@ def main(
 
             status, instances = convert_torch(model_id, cvt_cache_dirpath)
 
-            set_convert_status_last_handled_model_id(sts_cache_dirpath, status, model_id)
-            # delete_dir(ofc_cache_dirpath, only_clean=True)
-
             model_owner, model_name = model_id.split('/')
             for instance_index, instance in enumerate(instances, start=1):
                 instance.insert_label(
                     Implementation(
-                        origin=Origin(YLIROriginHub.ONNX, model_owner, model_name),
+                        origin=Origin(YLIROriginHub.TORCH, model_owner, model_name),
                         like=model_info.get('likes', None),
                         download=model_info.get('downloadsAllTime', None),
                     )
                 )
-                instance.save(instances_dirpath.joinpath(instance.unique))
+                instance_unique = instance.unique
+                try:
+                    instance.save(instances_dirpath.joinpath(instance.unique))
+                except FileExistsError as exception:
+                    logger.warning(f'-> Skip! Instance Already Exists: {instance_unique}')
+
+            set_convert_status_last_handled_model_id(sts_cache_dirpath, status, model_id)
+            # delete_dir(ofc_cache_dirpath, only_clean=True)
 
             progress_bar.set_description(f'Convert - {model_id}')
             progress_bar.update(1)

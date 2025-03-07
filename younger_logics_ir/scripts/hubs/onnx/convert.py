@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2025-01-03 16:27:58
+# Last Modified time: 2025-03-07 15:25:09
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -33,27 +33,16 @@ from younger_logics_ir.commons.constants import YLIROriginHub
 from younger_logics_ir.scripts.commons.utils import get_onnx_model_opset_version, get_onnx_opset_versions
 
 
-def safe_onnx_export(onnx_model_path: str, results_queue: multiprocessing.Queue):
-    this_status: dict[int, str] = dict()
-    this_instances: list[Instance] = list()
-    onnx_model = load_model(onnx_model_path)
-    onnx_model_opset_version = get_onnx_model_opset_version(onnx_model)
-    for onnx_opset_version in get_onnx_opset_versions():
-        if onnx_opset_version == onnx_model_opset_version:
-            continue
-        try:
-            other_version_onnx_model = onnx.version_converter.convert_version(onnx_model, onnx_opset_version)
-            try:
-                instance = Instance()
-                instance.setup_logicx(convert(other_version_onnx_model))
-                this_instances.append(instance)
-                this_status[onnx_opset_version] = 'success'
-            except Exception as exception:
-                this_status[onnx_opset_version] = 'onnx2logicx_convert_error'
-        except Exception as exception:
-            this_status[onnx_opset_version] = 'onnx2onnx_convert_error'
+def safe_onnx_export(origin_version_onnx_model_path: pathlib.Path, onnx_model_path: pathlib.Path, onnx_opset_version, results_queue: multiprocessing.Queue):
+    try:
+        origin_version_onnx_model = load_model(origin_version_onnx_model_path)
+        # Convert the ONNX model to the target opset version. This step will not occupy disk space. Thus cvt_cache_dirpath is not used.
+        onnx.save_model(onnx.version_converter.convert_version(origin_version_onnx_model, onnx_opset_version), onnx_model_path)
+        this_status = 'success'
+    except Exception as exception:
+        this_status = 'convert_error'
 
-    results_queue.put((this_status, this_instances))
+    results_queue.put(this_status)
 
 
 def convert_onnx(model_info: dict[str, Any], cvt_cache_dirpath: pathlib.Path) -> tuple[dict[str, dict[int, Any] | Literal['system_kill']], list[Instance]]:
@@ -62,23 +51,42 @@ def convert_onnx(model_info: dict[str, Any], cvt_cache_dirpath: pathlib.Path) ->
 
     onnx_model_path = download(model_info['url'], cvt_cache_dirpath.joinpath(f'{model_info["id"]}.onnx'))
 
-    results_queue = multiprocessing.Queue()
-    subprocess = multiprocessing.Process(target=safe_onnx_export, args=(onnx_model_path, results_queue))
-    subprocess.start()
-    subprocess.join()
-    if results_queue.empty():
-        this_status = 'system_kill'
-        this_instances = list()
-    else:
-        # this_status: dict[int, str]
-        # this_instances: list[Instance]
-        this_status, this_instances = results_queue.get()
+    try:
+        onnx_model = load_model(onnx_model_path)
+    except Exception as exception:
+        status[model_info["id"]] = 'onnx_load_error'
+        return status, instances
 
-    status['main_model'] = this_status
-    instances.extend(this_instances)
+    try:
+        onnx_model_opset_version = get_onnx_model_opset_version(onnx_model)
+    except Exception as exception:
+        status[model_info["id"]] = 'onnx_opset_error'
+        return status, instances
+
+    for onnx_opset_version in get_onnx_opset_versions():
+        if onnx_opset_version == onnx_model_opset_version:
+            continue
+        other_version_onnx_model_path = cvt_cache_dirpath.joinpath(f'{str(onnx_model_path.with_suffix(""))}-{onnx_opset_version}.onnx')
+        results_queue = multiprocessing.Queue()
+        subprocess = multiprocessing.Process(target=safe_onnx_export, args=(onnx_model_path, other_version_onnx_model_path, onnx_opset_version, results_queue))
+        subprocess.start()
+        subprocess.join()
+        if results_queue.empty():
+            this_status = 'system_kill'
+        else:
+            # this_status: dict[int, str]
+            # this_instances: list[Instance]
+            this_status = results_queue.get()
+            if this_status == 'success':
+                try:
+                    instance = Instance()
+                    instance.setup_logicx(convert(load_model(other_version_onnx_model_path)))
+                    instances.append(instance)
+                except Exception as exception:
+                    this_status = 'logicx_error'
+        status[model_info["id"]][onnx_opset_version] = this_status
 
     delete_dir(cvt_cache_dirpath, only_clean=True)
-
     return status, instances
 
 
@@ -143,9 +151,6 @@ def main(
 
             status, instances = convert_onnx(model_info, ofc_cache_dirpath)
 
-            set_convert_status_last_handled_model_id(sts_cache_dirpath, status, model_id)
-            delete_dir(ofc_cache_dirpath, only_clean=True)
-
             model_owner, model_name = model_id.split('/')
             for instance_index, instance in enumerate(instances, start=1):
                 instance.insert_label(
@@ -155,7 +160,15 @@ def main(
                         download=model_info.get('downloadsAllTime', None),
                     )
                 )
-                instance.save(instances_dirpath.joinpath(instance.unique))
+                instance_unique = instance.unique
+                try:
+                    instance.save(instances_dirpath.joinpath(instance.unique))
+                except FileExistsError as exception:
+                    logger.warning(f'-> Skip! Instance Already Exists: {instance_unique}')
+
+
+            set_convert_status_last_handled_model_id(sts_cache_dirpath, status, model_id)
+            delete_dir(ofc_cache_dirpath, only_clean=True)
 
             progress_bar.set_description(f'Convert - {model_id}')
             progress_bar.update(1)
