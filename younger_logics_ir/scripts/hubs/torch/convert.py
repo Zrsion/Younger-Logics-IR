@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2025-03-07 15:59:58
+# Last Modified time: 2025-03-07 16:11:55
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -130,7 +130,7 @@ def main(
     logger.info(f'-> Instances Creating ...')
     with tqdm.tqdm(total=len(model_infos), desc='Create Instances') as progress_bar:
         for convert_index, model_info in enumerate(model_infos, start=1):
-            model_id = model_info['id']
+            model_id = model_info['model_id']
 
             if last_handled_model_id is not None:
                 if model_id == last_handled_model_id:
