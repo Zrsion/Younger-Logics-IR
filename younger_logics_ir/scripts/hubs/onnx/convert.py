@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2025-03-07 16:44:35
+# Last Modified time: 2025-03-07 16:48:24
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -50,7 +50,7 @@ def convert_onnx(model_info: dict[str, Any], cvt_cache_dirpath: pathlib.Path) ->
     status: dict[str, dict[int, Literal['success', 'convert_error', 'system_kill', 'logicx_error']] | Literal['onnx_load_error', 'onnx_opset_error']] = dict()
     instances: list[Instance] = list()
 
-    onnx_model_path = download(model_info['url'], cvt_cache_dirpath.joinpath(f'{model_info['model_id']}.onnx'))
+    onnx_model_path = download(model_info['url'], cvt_cache_dirpath.joinpath(f'{model_info["model_id"]}.onnx'))
 
     try:
         onnx_model = load_model(onnx_model_path)
