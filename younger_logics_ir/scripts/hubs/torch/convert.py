@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2025-03-07 16:11:55
+# Last Modified time: 2025-03-07 16:44:21
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -14,6 +14,7 @@
 ########################################################################
 
 
+import os
 import tqdm
 import torch
 import pathlib
@@ -46,9 +47,10 @@ def safe_torch_export(model_id: str, onnx_model_path: pathlib.Path, onnx_opset_v
 
 
 def convert_torch(model_id: str, cvt_cache_dirpath: pathlib.Path) -> tuple[dict[str, dict[int, Any] | Literal['system_kill']], list[Instance]]:
-    status: dict[str, dict[int, str] | Literal['system_kill']] = dict()
+    status: dict[str, dict[int, Literal['success', 'convert_error', 'system_kill', 'logicx_error']]] = dict()
     instances: list[Instance] = list()
 
+    status[model_id] = dict()
     for onnx_opset_version in get_onnx_opset_versions():
         onnx_model_path = str(cvt_cache_dirpath.joinpath(f'model_opset_v{onnx_opset_version}.onnx'))
         results_queue = multiprocessing.Queue()

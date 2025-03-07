@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2025-03-07 16:39:33
+# Last Modified time: 2025-03-07 16:44:35
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -47,24 +47,24 @@ def safe_onnx_export(origin_version_onnx_model_path: pathlib.Path, onnx_model_pa
 
 
 def convert_onnx(model_info: dict[str, Any], cvt_cache_dirpath: pathlib.Path) -> tuple[dict[str, dict[int, Any] | Literal['system_kill']], list[Instance]]:
-    status: dict[str, dict[int, Literal['success', 'convert_error', 'system_kill', 'system_kill']] | Literal['onnx_load_error', 'onnx_opset_error']] = dict()
+    status: dict[str, dict[int, Literal['success', 'convert_error', 'system_kill', 'logicx_error']] | Literal['onnx_load_error', 'onnx_opset_error']] = dict()
     instances: list[Instance] = list()
 
-    model_id = model_info["model_id"].replace('/', '--ox--')
-    onnx_model_path = download(model_info['url'], cvt_cache_dirpath.joinpath(f'{model_id}.onnx'))
-    onnx_model_name = os.path.splitext(onnx_model_path)[0]
+    onnx_model_path = download(model_info['url'], cvt_cache_dirpath.joinpath(f'{model_info['model_id']}.onnx'))
 
     try:
         onnx_model = load_model(onnx_model_path)
     except Exception as exception:
-        status[onnx_model_name] = 'onnx_load_error'
+        status[model_info["model_id"]] = 'onnx_load_error'
         return status, instances
 
     try:
         onnx_model_opset_version = get_onnx_model_opset_version(onnx_model)
     except Exception as exception:
-        status[onnx_model_name] = 'onnx_opset_error'
+        status[model_info["model_id"]] = 'onnx_opset_error'
         return status, instances
+
+    status[model_info["model_id"]] = dict()
 
     for onnx_opset_version in get_onnx_opset_versions():
         if onnx_opset_version == onnx_model_opset_version:
@@ -87,7 +87,7 @@ def convert_onnx(model_info: dict[str, Any], cvt_cache_dirpath: pathlib.Path) ->
                     instances.append(instance)
                 except Exception as exception:
                     this_status = 'logicx_error'
-        status[onnx_model_name][onnx_opset_version] = this_status
+        status[model_info["model_id"]][onnx_opset_version] = this_status
 
     delete_dir(cvt_cache_dirpath, only_clean=True)
     return status, instances
