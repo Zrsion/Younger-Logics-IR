@@ -26,7 +26,7 @@ from younger.commons.logging import logger
 @click.option('--i-dirpath', required=True,  type=pathlib.Path)
 @click.option('--o-dirpath', required=True,  type=pathlib.Path)
 @click.option('--o-pattern', required=True,  type=str)
-@click.option('--file-size', required=False, type=int, defualt=10000)
+@click.option('--file-size', required=False, type=int, default=10000)
 def main(i_dirpath: pathlib.Path, o_dirpath: pathlib.Path, o_pattern: str, file_size: int = 10000):
     i_filepaths = [i_filepath for i_filepath in i_dirpath.iterdir()]
     create_dir(o_dirpath)
@@ -37,6 +37,8 @@ def main(i_dirpath: pathlib.Path, o_dirpath: pathlib.Path, o_pattern: str, file_
     status_num = 0
 
     for i_filepath in i_filepaths:
+        if not i_filepath.is_file():
+            continue
         with open(i_filepath, 'r') as i_file:
             for line in i_file:
                 status_num += 1

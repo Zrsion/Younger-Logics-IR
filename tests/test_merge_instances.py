@@ -69,6 +69,8 @@ def main(options_filepath: pathlib.Path):
             split_dirpath = o_dirpath.joinpath(f'{options["o_pattern"]}_{split_count}')
             inner_count = 0
 
+    if inner_count != 0:
+        logger.info(f'#{split_count} Split of Instances Moved: {split_dirpath}')
     logger.info(f'Total {split_count} Splits of Instances.')
 
 
