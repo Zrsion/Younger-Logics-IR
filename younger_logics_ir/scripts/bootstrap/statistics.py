@@ -24,7 +24,7 @@ from younger.commons.logging import logger
 from younger_logics_ir.modules import Dataset, Instance, LogicX
 
 
-def statistics_instances(load_dirpath: pathlib.Path, save_dirpath: pathlib.Path):
+def statistics_instances(input_dirpaths: pathlib.Path, output_dirpath: pathlib.Path):
     """
     .. todo::
         In future, please implement this method.
@@ -37,8 +37,10 @@ def statistics_instances(load_dirpath: pathlib.Path, save_dirpath: pathlib.Path)
     pass
 
 
-def statistics_logicxs(load_dirpath: pathlib.Path, save_dirpath: pathlib.Path):
-    logicxs = Dataset.drain_logicxs(load_dirpath)
+def statistics_logicxs(input_dirpaths: pathlib.Path, output_dirpath: pathlib.Path):
+    logicxs = (logicx for input_dirpath in input_dirpaths for logicx in Dataset.drain_logicxs(input_dirpath))
+    for input_dirpath in input_dirpaths:
+        logicxs.extend()
 
     ne_with_max_non = dict(
         number_of_nodes=0,
@@ -81,14 +83,14 @@ def statistics_logicxs(load_dirpath: pathlib.Path, save_dirpath: pathlib.Path):
         )
     )
 
-    statistics_filepath = save_dirpath.joinpath(f'statistics_logicxs.json')
+    statistics_filepath = output_dirpath.joinpath(f'statistics_logicxs.json')
     save_json(statistics, statistics_filepath)
     logger.info(f'Statistics Saved into: {statistics_filepath}')
 
 
-def main(load_dirpath: pathlib.Path, save_dirpath: pathlib.Path, granularity: Literal['Instance', 'LogicX']):
+def main(input_dirpaths: list[pathlib.Path], output_dirpath: pathlib.Path, granularity: Literal['Instance', 'LogicX']):
     if granularity == 'Instance':
-        statistics_instances(load_dirpath, save_dirpath)
+        statistics_instances(input_dirpaths, output_dirpath)
 
     if granularity == 'LogicX':
-        statistics_logicxs(load_dirpath, save_dirpath)
+        statistics_logicxs(input_dirpaths, output_dirpath)

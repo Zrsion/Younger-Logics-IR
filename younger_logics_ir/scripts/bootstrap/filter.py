@@ -36,16 +36,17 @@ def standardize_instance(parameter: tuple[str, int]) -> tuple[Origin, Instance, 
     return origin, instance, instance_sods, valid
 
 
-def main(load_dirpath: pathlib.Path, save_dirpath: pathlib.Path, opset_version: int | None = None, worker_number: int = 4):
+def main(input_dirpaths: list[pathlib.Path], output_dirpath: pathlib.Path, opset_version: int | None = None, worker_number: int = 4):
     if opset_version:
         logger.info(f'Filter {opset_version} ONNX OPSET Version')
     else:
         logger.info(f'Filter All. ONNX OPSET Version Not Specified.')
 
-    logger.info(f'Scanning Instances Directory Path: {load_dirpath}')
     parameters = list()
-    for instance_dirpath in load_dirpath.iterdir():
-        parameters.append((instance_dirpath, opset_version))
+    for input_dirpath in input_dirpaths:
+        logger.info(f'Scanning Instances Directory Path: {input_dirpath}')
+        for instance_dirpath in input_dirpath.iterdir():
+            parameters.append((instance_dirpath, opset_version))
 
     logger.info(f'Total Instances To Be Filtered: {len(parameters)}')
 
@@ -59,5 +60,5 @@ def main(load_dirpath: pathlib.Path, save_dirpath: pathlib.Path, opset_version: 
                     instances.append(instance)
                     instances.extend(instance_sods)
     logger.info(f'Total Instances Filtered: {len(instances)}')
-    Dataset.flush_instances(instances, save_dirpath)
+    Dataset.flush_instances(instances, output_dirpath)
     logger.info(f'Finished')
