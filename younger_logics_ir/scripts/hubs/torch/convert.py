@@ -132,7 +132,7 @@ def main(
     logger.info(f'-> Instances Creating ...')
     with tqdm.tqdm(total=len(model_infos), desc='Create Instances') as progress_bar:
         for convert_index, model_info in enumerate(model_infos, start=1):
-            model_id = model_info['model_id']
+            model_id = model_info['id']
 
             if last_handled_model_id is not None:
                 if model_id == last_handled_model_id:
@@ -150,7 +150,7 @@ def main(
 
             status, instances = convert_torch(model_id, cvt_cache_dirpath)
 
-            model_owner, model_name = model_id.split('/')
+            model_owner, model_name = 'Official', model_id
             for instance_index, instance in enumerate(instances, start=1):
                 instance.insert_label(
                     Implementation(

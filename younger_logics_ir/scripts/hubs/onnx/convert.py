@@ -50,21 +50,21 @@ def convert_onnx(model_info: dict[str, Any], cvt_cache_dirpath: pathlib.Path) ->
     status: dict[str, dict[int, Literal['success', 'convert_error', 'system_kill', 'logicx_error']] | Literal['onnx_load_error', 'onnx_opset_error']] = dict()
     instances: list[Instance] = list()
 
-    onnx_model_path = download(model_info['url'], cvt_cache_dirpath.joinpath(f'{model_info["model_id"]}.onnx'))
+    onnx_model_path = download(model_info['url'], cvt_cache_dirpath.joinpath(f'{model_info["id"]}.onnx'))
 
     try:
         onnx_model = load_model(onnx_model_path)
     except Exception as exception:
-        status[model_info["model_id"]] = 'onnx_load_error'
+        status[model_info["id"]] = 'onnx_load_error'
         return status, instances
 
     try:
         onnx_model_opset_version = get_onnx_model_opset_version(onnx_model)
     except Exception as exception:
-        status[model_info["model_id"]] = 'onnx_opset_error'
+        status[model_info["id"]] = 'onnx_opset_error'
         return status, instances
 
-    status[model_info["model_id"]] = dict()
+    status[model_info["id"]] = dict()
 
     for onnx_opset_version in get_onnx_opset_versions():
         if onnx_opset_version == onnx_model_opset_version:
@@ -87,7 +87,7 @@ def convert_onnx(model_info: dict[str, Any], cvt_cache_dirpath: pathlib.Path) ->
                     instances.append(instance)
                 except Exception as exception:
                     this_status = 'logicx_error'
-        status[model_info["model_id"]][onnx_opset_version] = this_status
+        status[model_info["id"]][onnx_opset_version] = this_status
 
     delete_dir(cvt_cache_dirpath, only_clean=True)
     return status, instances
@@ -145,7 +145,7 @@ def main(
     logger.info(f'-> Instances Creating ...')
     with tqdm.tqdm(total=len(model_infos), desc='Create Instances') as progress_bar:
         for convert_index, model_info in enumerate(model_infos, start=1):
-            model_id = model_info['model_id']
+            model_id = model_info['id']
             if last_handled_model_id is not None:
                 if model_id == last_handled_model_id:
                     last_handled_model_id = None

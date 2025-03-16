@@ -102,7 +102,7 @@ def get_onnx_hub_model_infos() -> list[dict[str, Any]]:
                 model_id = author + "/" + item["path"].split("/")[-1].strip(".onnx")
                 model_infos.append(
                     dict(
-                        model_id=model_id, 
+                        id=model_id, 
                         task=task,
                         opset=int(opset.replace("Opset", "")),
                         url="https://github.com/onnx/models/raw/main/" + item["path"]
@@ -115,7 +115,7 @@ def get_onnx_hub_model_infos() -> list[dict[str, Any]]:
                         model_id = "official/" + item["path"].split("/")[-1].strip(".onnx")
                         model_infos.append(
                             dict(
-                                model_id=model_id, 
+                                id=model_id,
                                 task=dir2task[dir],
                                 opset=None,
                                 url="https://github.com/onnx/models/raw/main/" + item["path"]
