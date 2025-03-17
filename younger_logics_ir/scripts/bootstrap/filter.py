@@ -28,20 +28,20 @@ def get_opset_version(opset_import: dict[str, int]) -> int | None:
     return opset_version
 
 
-def standardize_instance(parameter: tuple[str, int]) -> tuple[Origin, Instance, list[Instance], bool]:
+def standardize_instance(parameter: tuple[str, int]) -> bool:
     path, opset_version = parameter
     instance = Instance()
     try:
         instance.load(path)
 
         if opset_version is not None and opset_version != get_opset_version(instance.logicx.dag.graph['opset_import']):
-            origin, (instance, instance_sods), valid = (instance.labels[0].origin, (Instance(), list()), False)
+            valid = False
         else:
-            origin, (instance, instance_sods), valid = (instance.labels[0].origin, Instance.standardize(instance), True)
+            valid = True
     except:
-        origin, (instance, instance_sods), valid = None, (None, None), False
+        valid = False
 
-    return origin, instance, instance_sods, valid
+    return valid, path
 
 
 def main(input_dirpaths: list[pathlib.Path], output_dirpath: pathlib.Path, opset_version: int | None = None, worker_number: int = 4):
@@ -58,15 +58,18 @@ def main(input_dirpaths: list[pathlib.Path], output_dirpath: pathlib.Path, opset
 
     logger.info(f'Total Instances To Be Filtered: {len(parameters)}')
 
+    instance = Instance()
     instances: list[Instance] = list()
     with multiprocessing.Pool(worker_number) as pool:
         with tqdm.tqdm(total=len(parameters), desc='Filtering') as progress_bar:
-            for index, (origin, instance, instance_sods, valid) in enumerate(pool.imap_unordered(standardize_instance, parameters), start=1):
-                progress_bar.set_postfix({f'Current Model ID': f'{origin.hub}/{origin.owner}/{origin.name}'})
-                progress_bar.update(1)
+            for index, (valid, path) in enumerate(pool.imap_unordered(standardize_instance, parameters), start=1):
+                instance.load(path)
+                origin, (instance, instance_sods) = instance.labels[0].origin, Instance.standardize(instance)
                 if valid:
                     instances.append(instance)
                     instances.extend(instance_sods)
+                progress_bar.set_postfix({f'Current Model ID': f'{origin.hub}/{origin.owner}/{origin.name}'})
+                progress_bar.update(1)
     logger.info(f'Total Instances Filtered: {len(instances)}')
     Dataset.flush_instances(instances, output_dirpath)
     logger.info(f'Finished')
