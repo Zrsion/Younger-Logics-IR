@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2024-12-30 17:05:40
+# Last Modified time: 2025-03-17 16:04:05
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -23,15 +23,23 @@ from younger.commons.logging import logger
 from younger_logics_ir.modules import Dataset, Instance, Origin
 
 
+def get_opset_version(opset_import: dict[str, int]) -> int | None:
+    opset_version = opset_import.get('', None)
+    return opset_version
+
+
 def standardize_instance(parameter: tuple[str, int]) -> tuple[Origin, Instance, list[Instance], bool]:
     path, opset_version = parameter
     instance = Instance()
-    instance.load(path)
+    try:
+        instance.load(path)
 
-    if opset_version is not None and opset_version != instance.logicx.dag.graph['opset_import']:
-        origin, (instance, instance_sods), valid = (instance.origin, (Instance(), list()), False)
-    else:
-        origin, (instance, instance_sods), valid = (instance.origin, Instance.standardize(instance), True)
+        if opset_version is not None and opset_version != get_opset_version(instance.logicx.dag.graph['opset_import']):
+            origin, (instance, instance_sods), valid = (instance.origin, (Instance(), list()), False)
+        else:
+            origin, (instance, instance_sods), valid = (instance.origin, Instance.standardize(instance), True)
+    except:
+        origin, (instance, instance_sods), valid = None, (None, None), False
 
     return origin, instance, instance_sods, valid
 
