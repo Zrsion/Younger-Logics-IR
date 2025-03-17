@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2025-03-17 16:04:05
+# Last Modified time: 2025-03-17 16:54:00
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -35,9 +35,9 @@ def standardize_instance(parameter: tuple[str, int]) -> tuple[Origin, Instance, 
         instance.load(path)
 
         if opset_version is not None and opset_version != get_opset_version(instance.logicx.dag.graph['opset_import']):
-            origin, (instance, instance_sods), valid = (instance.origin, (Instance(), list()), False)
+            origin, (instance, instance_sods), valid = (instance.labels[0].origin, (Instance(), list()), False)
         else:
-            origin, (instance, instance_sods), valid = (instance.origin, Instance.standardize(instance), True)
+            origin, (instance, instance_sods), valid = (instance.labels[0].origin, Instance.standardize(instance), True)
     except:
         origin, (instance, instance_sods), valid = None, (None, None), False
 
