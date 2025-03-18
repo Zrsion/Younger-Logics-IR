@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2025-01-03 22:53:23
+# Last Modified time: 2025-03-18 09:33:34
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -310,7 +310,12 @@ class LogicX(object):
         :return: _description_
         :rtype: str
         """
-        return hash_string(cls.saves_dag(logicx.dag))
+
+        if logicx.standard:
+            luid = hash_string(cls.saves_dag(logicx.dag) + logicx.relationship)
+        else:
+            luid = hash_string(cls.saves_dag(logicx.dag))
+        return luid
 
     @classmethod
     def copy(cls, logicx: 'LogicX') -> 'LogicX':
