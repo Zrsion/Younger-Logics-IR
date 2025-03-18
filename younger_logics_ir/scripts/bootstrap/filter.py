@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2025-03-18 09:56:02
+# Last Modified time: 2025-03-18 10:09:28
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -28,7 +28,7 @@ def get_opset_version(opset_import: dict[str, int]) -> int | None:
     return opset_version
 
 
-def check_instance(parameter: tuple[pathlib.Path, int]) -> str | None:
+def check_instance(parameter: tuple[pathlib.Path, int]) -> pathlib.Path | None:
     path, opset_version = parameter
     instance = Instance()
     try:
@@ -37,11 +37,11 @@ def check_instance(parameter: tuple[pathlib.Path, int]) -> str | None:
         if opset_version is not None and opset_version != get_opset_version(instance.logicx.dag.graph['opset_import']):
             return None
         else:
-            return str(path.absolute())
+            return path
     except:
         return None
 
-def standardize_instance(parameter: pathlib.Path) -> tuple[Origin, int]:
+def standardize_instance(parameter: tuple[pathlib.Path, pathlib.Path]) -> tuple[Origin, int]:
     path, save_path = parameter
     instance = Instance()
     instance.load(path)
@@ -69,9 +69,9 @@ def main(input_dirpaths: list[pathlib.Path], output_dirpath: pathlib.Path, opset
     standardize_paramenters = list()
     with multiprocessing.Pool(worker_number) as pool:
         with tqdm.tqdm(total=len(clean_parameters), desc='Filtering') as progress_bar:
-            for index, absolute_path in enumerate(pool.imap_unordered(check_instance, clean_parameters), start=1):
-                if absolute_path is not None:
-                    standardize_paramenters.append((absolute_path, output_dirpath))
+            for index, path in enumerate(pool.imap_unordered(check_instance, clean_parameters), start=1):
+                if path is not None:
+                    standardize_paramenters.append((path, output_dirpath))
                 progress_bar.update(1)
     logger.info(f'Total Instances Filtered: {len(standardize_paramenters)}')
 
@@ -82,6 +82,7 @@ def main(input_dirpaths: list[pathlib.Path], output_dirpath: pathlib.Path, opset
             for index, (origin, sod_count) in enumerate(pool.imap_unordered(standardize_instance, standardize_paramenters), start=1):
                 instance_count += 1 + sod_count
                 progress_bar.set_postfix({f'Current Model ID': f'{origin.hub}/{origin.owner}/{origin.name} - {sod_count}'})
+                progress_bar.update(1)
     logger.info(f'Total Instances Standardized: {instance_count}')
 
     logger.info(f'Finished')
