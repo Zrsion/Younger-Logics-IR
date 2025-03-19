@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2025-03-18 09:33:34
+# Last Modified time: 2025-03-19 08:43:06
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -245,7 +245,7 @@ class LogicX(object):
                     logicx_descendants.extend(logicx_son_descendants)
                     operator_attributes[oa_name]['value'] = cls.hash(logicx_son)
 
-                if isinstance(oa_attr['value'], list) and isinstance(oa_attr['value'][0], networkx.DiGraph):
+                if isinstance(oa_attr['value'], list) and len(oa_attr['value'])!=0 and isinstance(oa_attr['value'][0], networkx.DiGraph):
                     assert all(isinstance(possible_subdag, networkx.DiGraph) for possible_subdag in oa_attr['value']), f'All subdags should be `networkx.DiGraph`!'
                     new_oa_attr_value: list[str] = list() # All change to hash
                     for subdag in oa_attr['value']:
