@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2024-12-31 09:22:39
+# Last Modified time: 2025-03-21 14:33:31
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -16,6 +16,8 @@
 
 import tqdm
 import pathlib
+
+from typing import Generator
 
 from younger.commons.io import load_json, save_json
 from younger.commons.hash import hash_strings
@@ -235,7 +237,7 @@ class Dataset(object):
         self._instances: dict[str, Instance] = dict()
 
     @classmethod
-    def drain_instances(cls, instances_dirpath: pathlib.Path, strict: bool = False) -> list[Instance]:
+    def drain_instances(cls, instances_dirpath: pathlib.Path, strict: bool = False) -> Generator[Instance, None, None]:
         """
 
         :param instances_dirpath: _description_
@@ -249,25 +251,26 @@ class Dataset(object):
         :rtype: list[Instance]
         """
 
-        instances = list()
-        logger.info(f' = [YL-IR] = Draining Instances @ {instances_dirpath}...')
+        # instances = list()
+        # logger.info(f' = [YL-IR] = Draining Instances @ {instances_dirpath}...')
         instance_dirpaths = sorted(instances_dirpath.iterdir())
-        with tqdm.tqdm(total=len(instance_dirpaths), desc='Drain Instance') as progress_bar:
-            for index, instance_dirpath in enumerate(instance_dirpaths, start=1):
-                instance = Instance()
-                try:
-                    progress_bar.set_description(f'Drain Instance[S]: {instance_dirpath.name}')
-                    instance.load(instance_dirpath)
-                except Exception as exception:
-                    progress_bar.set_description(f'Drain Instance[F]: {instance_dirpath.name}')
-                    if strict:
-                        raise exception
-                    else:
-                        continue
-                instances.append(instance)
-                progress_bar.update(1)
+        # with tqdm.tqdm(total=len(instance_dirpaths), desc='Drain Instance') as progress_bar:
+        for index, instance_dirpath in enumerate(instance_dirpaths, start=1):
+            instance = Instance()
+            try:
+                # progress_bar.set_description(f'Drain Instance[S]: {instance_dirpath.name}')
+                instance.load(instance_dirpath)
+            except Exception as exception:
+                # progress_bar.set_description(f'Drain Instance[F]: {instance_dirpath.name}')
+                if strict:
+                    raise exception
+                else:
+                    continue
+            # instances.append(instance)
+            yield instance
+            # progress_bar.update(1)
 
-        return instances
+        # return instances
 
     @classmethod
     def flush_instances(cls, instances: list[Instance], instances_dirpath: pathlib.Path, strict: bool = False) -> None:
@@ -301,7 +304,7 @@ class Dataset(object):
                 progress_bar.update(1)
 
     @classmethod
-    def drain_logicxs(cls, logicxs_dirpath: pathlib.Path, strict: bool = False) -> list[LogicX]:
+    def drain_logicxs(cls, logicxs_dirpath: pathlib.Path, strict: bool = False) -> Generator[LogicX, None, None]:
         """
 
         :param logicxs_dirpath: _description_
@@ -315,25 +318,26 @@ class Dataset(object):
         :rtype: list[LogicX]
         """
 
-        logicxs = list()
-        logger.info(f' = [YL-IR] = Draining LogicXs @ {logicxs_dirpath}...')
+        # logicxs = list()
+        # logger.info(f' = [YL-IR] = Draining LogicXs @ {logicxs_dirpath}...')
         logicx_dirpaths = sorted(logicxs_dirpath.iterdir())
-        with tqdm.tqdm(total=len(logicx_dirpaths), desc='Drain Instance') as progress_bar:
-            for index, logicx_dirpath in enumerate(logicx_dirpaths, start=1):
-                logicx = LogicX()
-                try:
-                    progress_bar.set_description(f'Drain LogicX[S]: {logicx_dirpath.name}')
-                    logicx.load(logicx_dirpath)
-                except Exception as exception:
-                    progress_bar.set_description(f'Drain LogicX[F]: {logicx_dirpath.name}')
-                    if strict:
-                        raise exception
-                    else:
-                        continue
-                logicxs.append(logicx)
-                progress_bar.update(1)
+        # with tqdm.tqdm(total=len(logicx_dirpaths), desc='Drain Instance') as progress_bar:
+        for index, logicx_dirpath in enumerate(logicx_dirpaths, start=1):
+            logicx = LogicX()
+            try:
+                # progress_bar.set_description(f'Drain LogicX[S]: {logicx_dirpath.name}')
+                logicx.load(logicx_dirpath)
+            except Exception as exception:
+                # progress_bar.set_description(f'Drain LogicX[F]: {logicx_dirpath.name}')
+                if strict:
+                    raise exception
+                else:
+                    continue
+            # logicxs.append(logicx)
+            yield logicx
+            # progress_bar.update(1)
 
-        return logicxs
+        # return logicxs
 
     @classmethod
     def flush_logicxs(cls, logicxs: list[Instance], logicxs_dirpath: pathlib.Path, strict: bool = False) -> None:
