@@ -42,15 +42,12 @@ class Instance(object):
         return self._meta
 
     @property
-    def valid(self) -> bool:
-        return self.logicx_valid and self.labels_valid
+    def unique(self) -> str | None:
+        return hash_string(self.logicx_part_unique + self.labels_part_unique)
 
     @property
-    def unique(self) -> str | None:
-        if self.valid:
-            return hash_string(self.logicx_part_unique + self.labels_part_unique)
-        else:
-            return None
+    def valid(self) -> bool:
+        return self.logicx_valid and self.labels_valid
 
     @property
     def logicx(self) -> LogicX:
@@ -61,11 +58,11 @@ class Instance(object):
         return self._logicx.valid
 
     @property
-    def logicx_part_unique(self) -> str | None:
+    def logicx_part_unique(self) -> str:
         if self.logicx_valid:
             return LogicX.luid(self._logicx)
         else:
-            return None
+            return 'IUID-LogicX-Null'
 
     @property
     def labels(self) -> list[Implementation]:
@@ -76,14 +73,14 @@ class Instance(object):
         return len(self._labels) != 0
 
     @property
-    def labels_part_unique(self) -> str | None:
+    def labels_part_unique(self) -> str:
         if self.labels_valid:
             return '-IUID-'.join([Implementation.iuid(label) for label in self._labels])
         else:
-            return None
+            return 'IUID-Labels-Null'
 
     def fresh_checker(self) -> bool:
-        return self.unique is None
+        return not self.valid
 
     def load(self, instance_dirpath: pathlib.Path) -> None:
         if not instance_dirpath.is_dir():
@@ -148,26 +145,26 @@ class Instance(object):
     def setup_logicx(self, logicx: LogicX) -> None:
         assert isinstance(logicx, LogicX), f'Argument \"logicx\" must be LogicX instead \"{type(logicx)}\"!'
         assert logicx.valid, f'Argument \"logicx\" must be valid!'
-        if self.meta.is_fresh:
-            self._logicx = logicx
+        # if self.meta.is_fresh:
+        self._logicx = logicx
         return
 
     def insert_label(self, label: Implementation) -> None:
-        if self.meta.is_fresh:
-            if label in self._labels:
-                pass
-            else:
-                self._labels.append(label)
-                self._labels = sorted(self._labels)
+        # if self.meta.is_fresh:
+        if label in self._labels:
+            pass
+        else:
+            self._labels.append(label)
+            self._labels = sorted(self._labels)
         return
 
     def delete_label(self, label: Implementation) -> None:
-        if self.meta.is_fresh:
-            if label in self._labels:
-                self._labels.remove(label)
-                self._labels = sorted(self._labels)
-            else:
-                pass
+        # if self.meta.is_fresh:
+        if label in self._labels:
+            self._labels.remove(label)
+            self._labels = sorted(self._labels)
+        else:
+            pass
         return
 
     def insert(self) -> bool:
@@ -222,9 +219,9 @@ class Instance(object):
         instance.setup_logicx(std_logicx)
 
         instance_sods = list() # sods: Sons or Descendants
-        for std_logicx_sod in std_logicx_sods:
-            std_instance = Instance()
-            std_instance.setup_logicx(std_logicx_sod)
-            instance_sods.append(std_instance)
+        for logicx_sod in std_logicx_sods:
+            instance_sod = Instance()
+            instance_sod.setup_logicx(logicx_sod)
+            instance_sods.append(instance_sod)
 
         return instance, instance_sods
