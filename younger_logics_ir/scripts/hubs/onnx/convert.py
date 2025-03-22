@@ -68,25 +68,32 @@ def convert_onnx(model_info: dict[str, Any], cvt_cache_dirpath: pathlib.Path) ->
 
     for onnx_opset_version in get_onnx_opset_versions():
         if onnx_opset_version == onnx_model_opset_version:
-            continue
-        other_version_onnx_model_path = cvt_cache_dirpath.joinpath(f'{str(onnx_model_path.with_suffix(""))}-{onnx_opset_version}.onnx')
-        results_queue = multiprocessing.Queue()
-        subprocess = multiprocessing.Process(target=safe_onnx_export, args=(onnx_model_path, other_version_onnx_model_path, onnx_opset_version, results_queue))
-        subprocess.start()
-        subprocess.join()
-        if results_queue.empty():
-            this_status = 'system_kill'
+            this_status = 'success'
+            try:
+                instance = Instance()
+                instance.setup_logicx(load_model(other_version_onnx_model_path))
+                instances.append(instance)
+            except Exception as exception:
+                this_status = 'logicx_error'
         else:
-            # this_status: dict[int, str]
-            # this_instances: list[Instance]
-            this_status = results_queue.get()
-            if this_status == 'success':
-                try:
-                    instance = Instance()
-                    instance.setup_logicx(convert(load_model(other_version_onnx_model_path)))
-                    instances.append(instance)
-                except Exception as exception:
-                    this_status = 'logicx_error'
+            other_version_onnx_model_path = cvt_cache_dirpath.joinpath(f'{str(onnx_model_path.with_suffix(""))}-{onnx_opset_version}.onnx')
+            results_queue = multiprocessing.Queue()
+            subprocess = multiprocessing.Process(target=safe_onnx_export, args=(onnx_model_path, other_version_onnx_model_path, onnx_opset_version, results_queue))
+            subprocess.start()
+            subprocess.join()
+            if results_queue.empty():
+                this_status = 'system_kill'
+            else:
+                # this_status: dict[int, str]
+                # this_instances: list[Instance]
+                this_status = results_queue.get()
+                if this_status == 'success':
+                    try:
+                        instance = Instance()
+                        instance.setup_logicx(convert(load_model(other_version_onnx_model_path)))
+                        instances.append(instance)
+                    except Exception as exception:
+                        this_status = 'logicx_error'
         status[model_info["id"]][onnx_opset_version] = this_status
 
     delete_dir(cvt_cache_dirpath, only_clean=True)
