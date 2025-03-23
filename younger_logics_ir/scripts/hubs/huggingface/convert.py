@@ -60,10 +60,11 @@ def safe_optimum_export(model_id: str, cvt_cache_dirpath: pathlib.Path, ofc_cach
     results_queue.put(this_status)
 
 
-def convert_optimum(model_id: str, cvt_cache_dirpath: pathlib.Path, ofc_cache_dirpath: pathlib.Path, device: Literal['cpu', 'cuda'] = 'cpu') -> tuple[dict[int, tuple[Literal['success', 'oversize', 'access_deny', 'convert_error', 'system_kill'], dict[str, Literal['success', 'logicx_error']]]], list[Instance]]:
+def convert_optimum(model_id: str, cvt_cache_dirpath: pathlib.Path, ofc_cache_dirpath: pathlib.Path, device: Literal['cpu', 'cuda'] = 'cpu') -> tuple[dict[int, tuple[Literal['success', 'oversize', 'access_deny', 'convert_error', 'system_kill'], dict[str, Literal['success', 'logicx_error']]]], list[Instance], list[str]]:
     assert device in {'cpu', 'cuda'}
     status: dict[int, tuple[Literal['success', 'oversize', 'access_deny', 'convert_error', 'system_kill'], dict[str, Literal['success', 'logicx_error']]]] = dict()
     instances: list[Instance] = list()
+    filenames: list[str] = list()
 
     for onnx_opset_version in get_onnx_opset_versions():
         # The highest opset version supported by torch.onnx.export is 20
@@ -85,13 +86,14 @@ def convert_optimum(model_id: str, cvt_cache_dirpath: pathlib.Path, ofc_cache_di
                         instance = Instance()
                         instance.setup_logicx(convert(load_model(filepath)))
                         instances.append(instance)
+                        filenames.append(str(filepath.relative_to(cvt_cache_dirpath)))
                         this_status_details[str(filepath)] = 'success'
                     except Exception as exception:
                         this_status_details[str(filepath)] = 'logicx_error'
         status[onnx_opset_version] = (this_status, this_status_details)
 
     clean_cache(model_id, cvt_cache_dirpath, ofc_cache_dirpath)
-    return status, instances
+    return status, instances, filenames
 
 
 def safe_keras_export(keras_model_path: pathlib.Path, onnx_model_path: pathlib.Path, onnx_opset_version: int, results_queue: multiprocessing.Queue):
@@ -111,9 +113,10 @@ def safe_keras_export(keras_model_path: pathlib.Path, onnx_model_path: pathlib.P
     results_queue.put(this_status)
 
 
-def convert_keras(model_id: str, cvt_cache_dirpath: pathlib.Path, ofc_cache_dirpath: pathlib.Path, device: Literal['cpu', 'cuda'] = 'cpu') -> tuple[dict[str, dict[int, Literal['success', 'convert_error', 'system_kill', 'logicx_error']]], list[Instance]]:
+def convert_keras(model_id: str, cvt_cache_dirpath: pathlib.Path, ofc_cache_dirpath: pathlib.Path, device: Literal['cpu', 'cuda'] = 'cpu') -> tuple[dict[str, dict[int, Literal['success', 'convert_error', 'system_kill', 'logicx_error']]], list[Instance], list[str]]:
     status: dict[str, Literal['access_deny'] | dict[int, Literal['success', 'convert_error', 'logicx_error']]] = dict()
     instances: list[Instance] = list()
+    filenames: list[str] = list()
     remote_keras_model_paths = list()
     for remote_keras_model_path in get_huggingface_hub_model_siblings(model_id, suffixes=['.keras', '.hdf5', '.h5', '.pbtxt', '.pb']):
         if remote_keras_model_path.endswith('.pbtxt') or remote_keras_model_path.endswith('.pb'):
@@ -154,12 +157,13 @@ def convert_keras(model_id: str, cvt_cache_dirpath: pathlib.Path, ofc_cache_dirp
                         instance = Instance()
                         instance.setup_logicx(convert(load_model(onnx_model_path)))
                         instances.append(instance)
+                        filenames.append(str(onnx_model_path.relative_to(cvt_cache_dirpath)))
                     except Exception as exception:
                         this_status = 'logicx_error'
             status[remote_keras_model_name][onnx_opset_version] = this_status
 
     clean_cache(model_id, cvt_cache_dirpath, ofc_cache_dirpath)
-    return status, instances
+    return status, instances, filenames
 
 
 def safe_tflite_export(tflite_model_path: pathlib.Path, onnx_model_path: pathlib.Path, onnx_opset_version: int, results_queue: multiprocessing.Queue):
@@ -174,9 +178,10 @@ def safe_tflite_export(tflite_model_path: pathlib.Path, onnx_model_path: pathlib
     results_queue.put(this_status)
 
 
-def convert_tflite(model_id: str, cvt_cache_dirpath: pathlib.Path, ofc_cache_dirpath: pathlib.Path, device: Literal['cpu', 'cuda'] = 'cpu') -> tuple[dict[str, dict[int, Literal['success', 'convert_error', 'system_kill', 'logicx_error']]], list[Instance]]:
+def convert_tflite(model_id: str, cvt_cache_dirpath: pathlib.Path, ofc_cache_dirpath: pathlib.Path, device: Literal['cpu', 'cuda'] = 'cpu') -> tuple[dict[str, dict[int, Literal['success', 'convert_error', 'system_kill', 'logicx_error']]], list[Instance], list[str]]:
     status: dict[str, Literal['access_deny'] | dict[int, Literal['success', 'convert_error', 'system_kill', 'logicx_error']]] = dict()
     instances: list[Instance] = list()
+    filenames: list[str] = list()
     remote_tflite_model_paths = get_huggingface_hub_model_siblings(model_id, suffixes=['.tflite'])
     for remote_tflite_model_path in remote_tflite_model_paths:
         remote_tflite_model_name = os.path.splitext(remote_tflite_model_path)[0]
@@ -205,13 +210,14 @@ def convert_tflite(model_id: str, cvt_cache_dirpath: pathlib.Path, ofc_cache_dir
                         instance = Instance()
                         instance.setup_logicx(convert(load_model(onnx_model_path)))
                         instances.append(instance)
+                        filenames.append(str(onnx_model_path.relative_to(cvt_cache_dirpath)))
                     except Exception as exception:
                         this_status = 'logicx_error'
 
             status[remote_tflite_model_name][onnx_opset_version] = this_status
 
     clean_cache(model_id, cvt_cache_dirpath, ofc_cache_dirpath)
-    return status, instances
+    return status, instances, filenames
 
 
 def safe_onnx_export(origin_version_onnx_model_path: pathlib.Path, onnx_model_path: pathlib.Path, onnx_opset_version, results_queue: multiprocessing.Queue):
@@ -226,9 +232,10 @@ def safe_onnx_export(origin_version_onnx_model_path: pathlib.Path, onnx_model_pa
     results_queue.put(this_status)
 
 
-def convert_onnx(model_id: str, cvt_cache_dirpath: pathlib.Path, ofc_cache_dirpath: pathlib.Path, device: Literal['cpu', 'cuda'] = 'cpu') -> tuple[dict[str, dict[int, Any] | Literal['system_kill']], list[Instance]]:
+def convert_onnx(model_id: str, cvt_cache_dirpath: pathlib.Path, ofc_cache_dirpath: pathlib.Path, device: Literal['cpu', 'cuda'] = 'cpu') -> tuple[dict[str, dict[int, Any] | Literal['system_kill']], list[Instance], list[str]]:
     status: dict[str, dict[int, str] | Literal['system_kill']] = dict()
     instances: list[Instance] = list()
+    filenames: list[str] = list()
     remote_onnx_model_paths = get_huggingface_hub_model_siblings(model_id, suffixes=['.onnx'])
     for remote_onnx_model_path in remote_onnx_model_paths:
         remote_onnx_model_name = os.path.splitext(remote_onnx_model_path)[0]
@@ -257,8 +264,9 @@ def convert_onnx(model_id: str, cvt_cache_dirpath: pathlib.Path, ofc_cache_dirpa
                 this_status = 'success'
                 try:
                     instance = Instance()
-                    instance.setup_logicx(load_model(other_version_onnx_model_path))
+                    instance.setup_logicx(convert(onnx_model))
                     instances.append(instance)
+                    filenames.append(str(onnx_model_path.relative_to(ofc_cache_dirpath)))
                 except Exception as exception:
                     this_status = 'logicx_error'
             else:
@@ -276,18 +284,19 @@ def convert_onnx(model_id: str, cvt_cache_dirpath: pathlib.Path, ofc_cache_dirpa
                             instance = Instance()
                             instance.setup_logicx(convert(load_model(other_version_onnx_model_path)))
                             instances.append(instance)
+                            filenames.append(str(other_version_onnx_model_path.relative_to(cvt_cache_dirpath)))
                         except Exception as exception:
                             this_status = 'logicx_error'
             status[remote_onnx_model_name][onnx_opset_version] = this_status
 
     clean_cache(model_id, cvt_cache_dirpath, ofc_cache_dirpath)
-    return status, instances
+    return status, instances, filenames
 
 
-def get_model_infos_and_convert_method(model_infos_filepath: pathlib.Path, framework: Literal['optimum', 'onnx', 'keras', 'tflite'], model_size_limit: tuple[int, int]) -> tuple[list[dict[str, Any]], Callable[[str, pathlib.Path, pathlib.Path, Literal['cpu', 'cuda']], tuple[dict[str, dict[int, Any] | Literal['system_kill']], list[Instance]]]]:
+def get_model_infos_and_convert_method(model_infos_filepath: pathlib.Path, framework: Literal['optimum', 'onnx', 'keras', 'tflite'], model_size_limit: tuple[int, int]) -> tuple[list[dict[str, Any]], Callable[[str, pathlib.Path, pathlib.Path, Literal['cpu', 'cuda']], tuple[dict[str, dict[int, Any] | Literal['system_kill']], list[Instance], list[str]]]]:
     # This is the convert order.
     supported_frameworks: list[str] = ['optimum', 'keras', 'onnx', 'tflite']
-    supported_convert_methods: dict[str, Callable[[str, pathlib.Path, pathlib.Path, Literal['cpu', 'cuda']], tuple[dict[str, dict[int, Any] | Literal['system_kill']], list[Instance]]]] = dict(
+    supported_convert_methods: dict[str, Callable[[str, pathlib.Path, pathlib.Path, Literal['cpu', 'cuda']], tuple[dict[str, dict[int, Any] | Literal['system_kill']], list[Instance], list[str]]]] = dict(
         optimum=convert_optimum,
         onnx=convert_onnx,
         keras=convert_keras,
@@ -436,13 +445,13 @@ def main(
                 progress_bar.update(1)
                 continue
 
-            status, instances = convert_method(model_id, cvt_cache_dirpath, ofc_cache_dirpath, device)
+            status, instances, filenames = convert_method(model_id, cvt_cache_dirpath, ofc_cache_dirpath, device)
 
             model_owner, model_name = model_id.split('/')
-            for instance_index, instance in enumerate(instances, start=1):
+            for index, instance, filename in enumerate(zip(instances, filenames), start=1):
                 instance.insert_label(
                     Implementation(
-                        origin=Origin(YLIROriginHub.HUGGINGFACE, model_owner, model_name),
+                        origin=Origin(YLIROriginHub.HUGGINGFACE, model_owner, model_name + '-F-' + filename),
                         like=model_info['likes'],
                         download=model_info['downloadsAllTime'],
                     )

@@ -42,7 +42,7 @@ class Instance(object):
         return self._meta
 
     @property
-    def unique(self) -> str | None:
+    def unique(self) -> str:
         return hash_string(self.logicx_part_unique + self.labels_part_unique)
 
     @property

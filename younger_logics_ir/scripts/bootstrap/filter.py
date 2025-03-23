@@ -41,6 +41,7 @@ def check_instance(parameter: tuple[pathlib.Path, int]) -> pathlib.Path | None:
     except:
         return None
 
+
 def standardize_instance(parameter: tuple[pathlib.Path, pathlib.Path]) -> tuple[Origin, int]:
     path, save_path = parameter
     instance = Instance()
