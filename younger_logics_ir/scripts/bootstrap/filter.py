@@ -48,9 +48,10 @@ def standardize_instance(parameter: tuple[pathlib.Path, pathlib.Path]) -> tuple[
     instance.load(path)
     instance, instance_sods = Instance.standardize(instance)
 
-    instance.save(save_path.joinpath(f'{instance.unique}'))
-    for instance_sod in instance_sods:
-        instance_sod.save(save_path.joinpath(f'{instance_sod.unique}'))
+    instance_unique = instance.unique
+    instance.save(save_path.joinpath(f'{instance_unique}'))
+    for index, instance_sod in enumerate(instance_sods):
+        instance_sod.save(save_path.joinpath(f'{instance_unique}-SoD-{index}'))
     return (instance.labels[0].origin, len(instance_sods))
 
 
