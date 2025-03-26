@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2025-02-14 10:30:32
+# Last Modified time: 2025-03-26 10:00:11
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -157,7 +157,7 @@ def convert_keras(model_id: str, cvt_cache_dirpath: pathlib.Path, ofc_cache_dirp
                         instance = Instance()
                         instance.setup_logicx(convert(load_model(onnx_model_path)))
                         instances.append(instance)
-                        filenames.append(str(onnx_model_path.relative_to(cvt_cache_dirpath)))
+                        filenames.append(f'{remote_keras_model_name}_OXV_{onnx_opset_version}')
                     except Exception as exception:
                         this_status = 'logicx_error'
             status[remote_keras_model_name][onnx_opset_version] = this_status
@@ -210,7 +210,7 @@ def convert_tflite(model_id: str, cvt_cache_dirpath: pathlib.Path, ofc_cache_dir
                         instance = Instance()
                         instance.setup_logicx(convert(load_model(onnx_model_path)))
                         instances.append(instance)
-                        filenames.append(str(onnx_model_path.relative_to(cvt_cache_dirpath)))
+                        filenames.append(f'{remote_tflite_model_name}_OXV_{onnx_opset_version}')
                     except Exception as exception:
                         this_status = 'logicx_error'
 
@@ -266,11 +266,11 @@ def convert_onnx(model_id: str, cvt_cache_dirpath: pathlib.Path, ofc_cache_dirpa
                     instance = Instance()
                     instance.setup_logicx(convert(onnx_model))
                     instances.append(instance)
-                    filenames.append(str(onnx_model_path.relative_to(ofc_cache_dirpath)))
+                    filenames.append(f'{remote_onnx_model_name}_OXV_{onnx_opset_version}')
                 except Exception as exception:
                     this_status = 'logicx_error'
             else:
-                other_version_onnx_model_path = cvt_cache_dirpath.joinpath(f'{str(onnx_model_path.with_suffix(""))}-{onnx_opset_version}.onnx')
+                other_version_onnx_model_path = cvt_cache_dirpath.joinpath(f'{hash_string(str(onnx_model_path))}.onnx')
                 results_queue = multiprocessing.Queue()
                 subprocess = multiprocessing.Process(target=safe_onnx_export, args=(onnx_model_path, other_version_onnx_model_path, onnx_opset_version, results_queue))
                 subprocess.start()
@@ -284,7 +284,7 @@ def convert_onnx(model_id: str, cvt_cache_dirpath: pathlib.Path, ofc_cache_dirpa
                             instance = Instance()
                             instance.setup_logicx(convert(load_model(other_version_onnx_model_path)))
                             instances.append(instance)
-                            filenames.append(str(other_version_onnx_model_path.relative_to(cvt_cache_dirpath)))
+                            filenames.append(f'{remote_onnx_model_name}_OXV_{onnx_opset_version}')
                         except Exception as exception:
                             this_status = 'logicx_error'
             status[remote_onnx_model_name][onnx_opset_version] = this_status

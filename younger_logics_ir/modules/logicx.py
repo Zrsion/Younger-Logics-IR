@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2025-03-19 08:43:06
+# Last Modified time: 2025-03-26 10:22:02
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -184,7 +184,7 @@ class LogicX(object):
         dag.graph = dic.get("graph", dict())
         for node_data in dic['nodes']:
             node_index = node_data['node_index']
-            node_features = node_data['node_features']
+            node_features = str2dag(node_data['node_features'])
             dag.add_node(node_index, **node_features)
         for edge_data in dic['edges']:
             tail_index = edge_data['tail_index']

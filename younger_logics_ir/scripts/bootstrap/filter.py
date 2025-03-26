@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2025-03-18 10:09:28
+# Last Modified time: 2025-03-26 10:34:53
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -83,7 +83,7 @@ def main(input_dirpaths: list[pathlib.Path], output_dirpath: pathlib.Path, opset
         with tqdm.tqdm(total=len(standardize_paramenters), desc='Standardizing') as progress_bar:
             for index, (origin, sod_count) in enumerate(pool.imap_unordered(standardize_instance, standardize_paramenters), start=1):
                 instance_count += 1 + sod_count
-                progress_bar.set_postfix({f'Current Model ID': f'{origin.hub}/{origin.owner}/{origin.name} - {sod_count}'})
+                progress_bar.set_postfix({f'Current Model ID': f'{origin.hub}/{origin.owner}/{origin.name} - {1 + sod_count}'})
                 progress_bar.update(1)
     logger.info(f'Total Instances Standardized: {instance_count}')
 
