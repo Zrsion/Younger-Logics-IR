@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2025-03-26 10:22:02
+# Last Modified time: 2025-04-03 16:22:00
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -243,7 +243,7 @@ class LogicX(object):
                     logicx_son, logicx_son_descendants = cls.standardize(LogicX(logicx.src, oa_attr['value']))
                     logicx_sons.append(logicx_son)
                     logicx_descendants.extend(logicx_son_descendants)
-                    operator_attributes[oa_name]['value'] = cls.hash(logicx_son)
+                    operator_attributes[oa_name]['value'] = cls.luid(logicx_son)
 
                 if isinstance(oa_attr['value'], list) and len(oa_attr['value'])!=0 and isinstance(oa_attr['value'][0], networkx.DiGraph):
                     assert all(isinstance(possible_subdag, networkx.DiGraph) for possible_subdag in oa_attr['value']), f'All subdags should be `networkx.DiGraph`!'
@@ -252,10 +252,10 @@ class LogicX(object):
                         logicx_son, logicx_son_descendants = cls.standardize(LogicX(logicx.src, subdag))
                         logicx_sons.append(logicx_son)
                         logicx_descendants.extend(logicx_son_descendants)
-                        new_oa_attr_value.append(cls.hash(logicx_son))
+                        new_oa_attr_value.append(cls.luid(logicx_son))
                     operator_attributes[oa_name]['value'] = new_oa_attr_value
 
-        logicx_hash = cls.hash(logicx)
+        logicx_hash = cls.luid(logicx)
         for logicx_son in logicx_sons:
             logicx_son._relationship = logicx_hash
 
