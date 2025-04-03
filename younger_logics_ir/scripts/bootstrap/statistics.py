@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2025-04-03 16:53:29
+# Last Modified time: 2025-04-03 16:59:19
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -39,8 +39,6 @@ def statistics_instances(input_dirpaths: pathlib.Path, output_dirpath: pathlib.P
 
 def statistics_logicxs(input_dirpaths: pathlib.Path, output_dirpath: pathlib.Path):
     logicxs = (logicx for input_dirpath in input_dirpaths for logicx in Dataset.drain_logicxs(input_dirpath))
-    for input_dirpath in input_dirpaths:
-        logicxs.extend()
 
     ne_with_max_non = dict(
         number_of_nodes=0,
@@ -50,6 +48,7 @@ def statistics_logicxs(input_dirpaths: pathlib.Path, output_dirpath: pathlib.Pat
         number_of_nodes=0,
         number_of_edges=0
     ) # The (number of nodes, number of edge) with max number of edges.
+
     operator_occurence: dict[str, int] = dict()
     detailed_statistics: dict[str, Any] = dict()
     for logicx in logicxs:
