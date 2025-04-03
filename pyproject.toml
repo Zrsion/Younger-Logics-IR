@@ -37,6 +37,7 @@ dependencies = [
     "onnx",
     "tqdm",
     "click",
+    "younger",
     "networkx",
     "python-semantic-release"
 ]
