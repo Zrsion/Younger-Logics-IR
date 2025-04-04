@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2025-04-04 14:48:36
+# Last Modified time: 2025-04-04 22:31:05
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -100,7 +100,7 @@ def main(input_dirpaths: list[pathlib.Path], output_dirpath: pathlib.Path, opset
     logger.info(f'Total Instances To Be Filtered: {len(check_parameters)}')
     instance_dirpaths = list()
     with multiprocessing.Pool(worker_number) as pool:
-        with tqdm.tqdm(total=len(check_parameters), desc='Initial Filter - For Opset') as progress_bar:
+        with tqdm.tqdm(total=len(check_parameters), desc=f'Initial Filter - For OPSET={"ALL" if opset_version is None else opset_version}') as progress_bar:
             for index, path in enumerate(pool.imap_unordered(check_instance, check_parameters), start=1):
                 if path is not None:
                     instance_dirpaths.append(path)

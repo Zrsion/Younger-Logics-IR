@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2025-03-21 14:33:31
+# Last Modified time: 2025-04-04 22:43:10
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -320,13 +320,13 @@ class Dataset(object):
 
         # logicxs = list()
         # logger.info(f' = [YL-IR] = Draining LogicXs @ {logicxs_dirpath}...')
-        logicx_dirpaths = sorted(logicxs_dirpath.iterdir())
+        logicx_filepaths = sorted(logicxs_dirpath.iterdir())
         # with tqdm.tqdm(total=len(logicx_dirpaths), desc='Drain Instance') as progress_bar:
-        for index, logicx_dirpath in enumerate(logicx_dirpaths, start=1):
+        for index, logicx_filepath in enumerate(logicx_filepaths, start=1):
             logicx = LogicX()
             try:
                 # progress_bar.set_description(f'Drain LogicX[S]: {logicx_dirpath.name}')
-                logicx.load(logicx_dirpath)
+                logicx.load(logicx_filepath)
             except Exception as exception:
                 # progress_bar.set_description(f'Drain LogicX[F]: {logicx_dirpath.name}')
                 if strict:
@@ -346,10 +346,10 @@ class Dataset(object):
         with tqdm.tqdm(total=len(logicxs), desc='Flush LogicX') as progress_bar:
             for index, logicx in enumerate(logicxs, start=1):
                 logicx_unique = LogicX.hash(logicx)
-                logicx_dirpath = logicxs_dirpath.joinpath(f'{logicx_unique}')
+                logicx_filepath = logicxs_dirpath.joinpath(f'{logicx_unique}')
                 try:
                     progress_bar.set_description(f'Flush LogicX[S]: {logicx_unique}')
-                    logicx.save(logicx_dirpath)
+                    logicx.save(logicx_filepath)
                 except Exception as exception:
                     progress_bar.set_description(f'Flush LogicX[F]: {logicx_unique}')
                     if strict:

@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2025-04-03 16:59:19
+# Last Modified time: 2025-04-04 23:03:52
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -14,6 +14,7 @@
 ########################################################################
 
 
+import tqdm
 import pathlib
 
 from typing import Any, Literal
@@ -49,26 +50,39 @@ def statistics_logicxs(input_dirpaths: pathlib.Path, output_dirpath: pathlib.Pat
         number_of_edges=0
     ) # The (number of nodes, number of edge) with max number of edges.
 
+    operator_details: dict[str, tuple[str, dict]] = dict()
     operator_occurence: dict[str, int] = dict()
     detailed_statistics: dict[str, Any] = dict()
-    for logicx in logicxs:
+    for logicx in tqdm.tqdm(logicxs):
         logicx_hash = LogicX.hash(logicx)
         non = logicx.dag.number_of_nodes()
         noe = logicx.dag.number_of_edges()
         if (ne_with_max_non['number_of_nodes'] < non) or (ne_with_max_non['number_of_nodes'] == non and ne_with_max_non['number_of_edges'] < noe):
-            ne_with_max_non = (non, noe)
+            ne_with_max_non = dict(
+                number_of_nodes = non,
+                number_of_edges = noe
+            )
         if (ne_with_max_noe['number_of_edges'] < noe) or (ne_with_max_noe['number_of_edges'] == noe and ne_with_max_noe['number_of_nodes'] < non):
-            ne_with_max_noe = (non, noe)
+            ne_with_max_noe = dict(
+                number_of_nodes = non,
+                number_of_edges = noe
+            )
 
+        this_operator_details: dict[str, int] = dict()
         this_operator_occurence: dict[str, int] = dict()
         for operator_node_index in logicx.node_indices('operator'):
-            tuid = logicx.node_tuid_feature(operator_node_index)
-            operator_occurence[tuid] = operator_occurence.get(tuid, 0) + 1
-            this_operator_occurence[tuid] = this_operator_occurence.get(tuid, 0) + 1
+            uuid = logicx.node_features(operator_node_index)['node_uuid']
+            if uuid not in operator_details:
+                operator_details[uuid] = (logicx.node_features(operator_node_index)['node_tuid'], logicx.node_features(operator_node_index)['node_attr'])
+            operator_occurence[uuid] = operator_occurence.get(uuid, 0) + 1
+            if uuid not in this_operator_details:
+                this_operator_details[uuid] = (logicx.node_features(operator_node_index)['node_tuid'], logicx.node_features(operator_node_index)['node_attr'])
+            this_operator_occurence[uuid] = this_operator_occurence.get(uuid, 0) + 1
 
         this_statistics = dict(
             number_of_nodes = non,
             number_of_edges = noe,
+            operator_details = get_object_with_sorted_dict(this_operator_details),
             operator_occurence = get_object_with_sorted_dict(this_operator_occurence),
         )
         detailed_statistics[logicx_hash] = this_statistics
@@ -78,6 +92,7 @@ def statistics_logicxs(input_dirpaths: pathlib.Path, output_dirpath: pathlib.Pat
         overall = dict(
             ne_with_max_non = ne_with_max_non,
             ne_with_max_noe = ne_with_max_noe,
+            operator_details = get_object_with_sorted_dict(operator_details),
             operator_occurence = get_object_with_sorted_dict(operator_occurence),
         )
     )

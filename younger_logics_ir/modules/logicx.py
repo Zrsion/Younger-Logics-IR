@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2025-04-04 14:31:45
+# Last Modified time: 2025-04-04 23:11:44
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -265,6 +265,8 @@ class LogicX(object):
             node_type = logicx.node_type_feature(node_index)
             if node_type == 'operator':
                 node_attr = logicx.node_attr_feature(node_index)['attributes']
+                for node_attr_name, node_attr_value in node_attr.items():
+                    node_attr_value.pop('doc_string')
             else:
                 node_attr = dict()
             node_feat = dict(
