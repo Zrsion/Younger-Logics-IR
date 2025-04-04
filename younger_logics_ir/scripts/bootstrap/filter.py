@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2025-04-04 13:09:06
+# Last Modified time: 2025-04-04 13:46:21
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -44,15 +44,15 @@ def check_instance(parameter: tuple[pathlib.Path, int]) -> pathlib.Path | None:
         return None
 
 
-def filter_instance(parameter: tuple[pathlib.Path, pathlib.Path, pathlib.Path, pathlib.Path]) -> tuple[Origin, int]:
-    path, std_dirpath, skt_dirpath, pdg_dirpath = parameter
+def filter_instance(parameter: tuple[pathlib.Path, pathlib.Path, pathlib.Path, pathlib.Path]) -> tuple[Origin, int, bool, bool, networkx.DiGraph]:
+    path, std_dirpath, skt_dirpath = parameter
     instance = Instance()
     instance.load(path)
     instance_unique = instance.unique
 
     logicx, logicx_sods = LogicX.simplify(instance.logicx)
     org_logicxs = [logicx] + logicx_sods
-    pedigree = networkx.DiGraph()
+    family = networkx.DiGraph()
 
     for org_logicx in org_logicxs:
         std_logicx = LogicX.standardize(logicx)
@@ -62,20 +62,23 @@ def filter_instance(parameter: tuple[pathlib.Path, pathlib.Path, pathlib.Path, p
         skt_logicx_id = LogicX.hash(skt_logicx)
 
         org_logicx_id = LogicX.luid(org_logicx)
-        if org_logicx_id != org_logicx.relationship:
-            pedigree.add_edge(org_logicx.relationship, org_logicx_id, standard=std_logicx_id, skeleton=skt_logicx_id)
+        family.add_edge(org_logicx.relationship, org_logicx_id, standard=std_logicx_id, skeleton=skt_logicx_id)
 
         std_logicx_savepath = std_dirpath.joinpath(std_logicx_id)
         if not std_logicx_savepath.is_file():
+            std = True
             std_logicx.save(std_logicx_savepath)
+        else:
+            std = False
 
         skt_logicx_savepath = skt_dirpath.joinpath(skt_logicx_id)
         if not skt_logicx_savepath.is_file():
+            skt = True
             skt_logicx.save(skt_logicx_savepath)
+        else:
+            skt = False
 
-    if len(pedigree) != 0:
-        save_json(networkx.readwrite.json_graph.adjacency_data(pedigree), pdg_dirpath.joinpath(instance_unique), indent=2)
-    return (instance.labels[0].origin, len(org_logicxs))
+    return (instance.labels[0].origin, len(org_logicxs), std, skt, family)
 
 
 def main(input_dirpaths: list[pathlib.Path], output_dirpath: pathlib.Path, opset_version: int | None = None, worker_number: int = 4):
@@ -92,10 +95,8 @@ def main(input_dirpaths: list[pathlib.Path], output_dirpath: pathlib.Path, opset
 
     std_dirpath = output_dirpath.joinpath('standard')
     skt_dirpath = output_dirpath.joinpath('skeleton')
-    pdg_dirpath = output_dirpath.joinpath('pedigree')
     create_dir(std_dirpath)
     create_dir(skt_dirpath)
-    create_dir(pdg_dirpath)
 
     logger.info(f'Total Instances To Be Filtered: {len(check_parameters)}')
     filter_paramenters = list()
@@ -109,12 +110,20 @@ def main(input_dirpaths: list[pathlib.Path], output_dirpath: pathlib.Path, opset
 
     logger.info(f'Total Instances To Be Simplified - Standardize & Skeletonize: {len(filter_paramenters)}')
     instance_count = 0
+    standard_count = 0
+    skeleton_count = 0
+    pedigree = networkx.DiGraph()
     with multiprocessing.Pool(worker_number) as pool:
         with tqdm.tqdm(total=len(filter_paramenters), desc='Simplify - Standardize & Skeleonize') as progress_bar:
-            for index, (origin, sod_count) in enumerate(pool.imap_unordered(filter_instance, filter_paramenters), start=1):
-                instance_count += 1 + sod_count
-                progress_bar.set_postfix({f'Current Model ID': f'{origin.hub}/{origin.owner}/{origin.name} - {1 + sod_count}'})
+            for index, (origin, lgx_count, std, skt, family) in enumerate(pool.imap_unordered(filter_instance, filter_paramenters), start=1):
+                instance_count += lgx_count
+                standard_count += std
+                skeleton_count += skt
+                pedigree = networkx.compose(pedigree, family)
+                progress_bar.set_postfix({f'Current Model ID': f'{origin.hub}/{origin.owner}/{origin.name} - {lgx_count}'})
                 progress_bar.update(1)
     logger.info(f'Total Instances Standardized: {instance_count}')
 
+    pdg_filepath = output_dirpath.joinpath('pedigree.json')
+    save_json(networkx.readwrite.json_graph.adjacency_data(pedigree), pdg_filepath, indent=2)
     logger.info(f'Finished')
