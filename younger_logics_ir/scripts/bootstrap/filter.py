@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2025-04-04 13:55:31
+# Last Modified time: 2025-04-04 14:00:32
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -123,7 +123,7 @@ def main(input_dirpaths: list[pathlib.Path], output_dirpath: pathlib.Path, opset
                 pedigree.add_edges_from(family.edges())
                 progress_bar.set_postfix({f'Current Model ID': f'{origin.hub}/{origin.owner}/{origin.name} - {lgx_count}'})
                 progress_bar.update(1)
-    logger.info(f'Total Instances Standardized: {instance_count}')
+    logger.info(f'Total/Standard/Skeleton: {instance_count}/{standard_count}/{skeleton_count}')
 
     pdg_filepath = output_dirpath.joinpath('pedigree.json')
     save_json(networkx.readwrite.json_graph.adjacency_data(pedigree), pdg_filepath, indent=2)
