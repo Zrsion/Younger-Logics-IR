@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2025-04-04 13:47:55
+# Last Modified time: 2025-04-04 13:55:31
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -119,7 +119,8 @@ def main(input_dirpaths: list[pathlib.Path], output_dirpath: pathlib.Path, opset
                 instance_count += lgx_count
                 standard_count += std
                 skeleton_count += skt
-                pedigree = networkx.compose(pedigree, family)
+                pedigree.add_nodes_from(family.nodes())
+                pedigree.add_edges_from(family.edges())
                 progress_bar.set_postfix({f'Current Model ID': f'{origin.hub}/{origin.owner}/{origin.name} - {lgx_count}'})
                 progress_bar.update(1)
     logger.info(f'Total Instances Standardized: {instance_count}')
