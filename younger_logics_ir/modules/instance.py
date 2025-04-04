@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2025-02-06 09:12:21
+# Last Modified time: 2025-04-03 22:00:55
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -211,17 +211,3 @@ class Instance(object):
             instance_copy.insert_label(Implementation.copy(implementation))
 
         return instance_copy
-
-    @classmethod
-    def standardize(cls, instance: 'Instance') -> tuple['Instance', list['Instance']]:
-        std_logicx, std_logicx_sods = LogicX.standardize(instance.logicx)
-
-        instance.setup_logicx(std_logicx)
-
-        instance_sods = list() # sods: Sons or Descendants
-        for logicx_sod in std_logicx_sods:
-            instance_sod = Instance()
-            instance_sod.setup_logicx(logicx_sod)
-            instance_sods.append(instance_sod)
-
-        return instance, instance_sods

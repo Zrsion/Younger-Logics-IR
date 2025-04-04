@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2025-04-03 16:22:00
+# Last Modified time: 2025-04-03 21:57:21
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -226,7 +226,7 @@ class LogicX(object):
         return dic
 
     @classmethod
-    def standardize(cls, logicx: 'LogicX') -> tuple['LogicX', list['LogicX']]:
+    def simplify(cls, logicx: 'LogicX') -> tuple['LogicX', list['LogicX']]:
         """
         .. todo::
             All Sub-Graphs Should Be Standardized To LogicX.
@@ -240,7 +240,7 @@ class LogicX(object):
             operator_attributes: dict[str, dict] = logicx.node_attr_feature(operator_index)['attributes']
             for oa_name, oa_attr in operator_attributes.items():
                 if isinstance(oa_attr['value'], networkx.DiGraph):
-                    logicx_son, logicx_son_descendants = cls.standardize(LogicX(logicx.src, oa_attr['value']))
+                    logicx_son, logicx_son_descendants = cls.simplify(LogicX(logicx.src, oa_attr['value']))
                     logicx_sons.append(logicx_son)
                     logicx_descendants.extend(logicx_son_descendants)
                     operator_attributes[oa_name]['value'] = cls.luid(logicx_son)
@@ -249,7 +249,7 @@ class LogicX(object):
                     assert all(isinstance(possible_subdag, networkx.DiGraph) for possible_subdag in oa_attr['value']), f'All subdags should be `networkx.DiGraph`!'
                     new_oa_attr_value: list[str] = list() # All change to hash
                     for subdag in oa_attr['value']:
-                        logicx_son, logicx_son_descendants = cls.standardize(LogicX(logicx.src, subdag))
+                        logicx_son, logicx_son_descendants = cls.simplify(LogicX(logicx.src, subdag))
                         logicx_sons.append(logicx_son)
                         logicx_descendants.extend(logicx_son_descendants)
                         new_oa_attr_value.append(cls.luid(logicx_son))
@@ -263,6 +263,29 @@ class LogicX(object):
         return logicx, logicx_sons + logicx_descendants
 
     @classmethod
+    def standardize(cls, logicx: 'LogicX') -> 'LogicX':
+        assert logicx.standard, f'\"LogicX\" is not simplified!'
+        src = logicx.src
+        dag = networkx.DiGraph()
+        for node_index in logicx.dag.nodes():
+            node_tuid = logicx.node_tuid_feature(node_index)
+            node_type = logicx.node_type_feature(node_index)
+            node_attr = logicx.node_attr_feature(node_index)['attributes']
+            node_feat = dict(
+                node_tuid = node_tuid,
+                node_type = node_type,
+                node_attr = node_attr,
+            )
+            node_uuid = hash_string(saves_json(get_object_with_sorted_dict(node_feat)))
+            dag.add_node(node_index, node_uuid=node_uuid, node_tuid=node_tuid, node_type=node_type, node_attr=node_attr)
+
+        for edge_u_index, edge_v_index in logicx.dag.edges():
+            dag.add_edge(edge_u_index, edge_v_index)
+
+        logicx_standard = LogicX(src, dag)
+        return logicx_standard
+
+    @classmethod
     def skeletonize(cls, logicx: 'LogicX') -> 'LogicX':
         """
         Skeletonize LogicX.
@@ -274,11 +297,18 @@ class LogicX(object):
         :rtype: LogicX
         """
 
-        assert logicx.standard, f'\"LogicX\" is not standardized!'
+        assert logicx.standard, f'\"LogicX\" is not simplified!'
         src = logicx.src
         dag = networkx.DiGraph()
         for node_index in logicx.dag.nodes():
-            dag.add_node(node_index, node_tuid=logicx.node_tuid_feature(node_index), node_type=logicx.node_type_feature(node_index))
+            node_tuid = logicx.node_tuid_feature(node_index)
+            node_type = logicx.node_type_feature(node_index)
+            node_feat = dict(
+                node_tuid = node_tuid,
+                node_type = node_type,
+            )
+            node_uuid = hash_string(saves_json(get_object_with_sorted_dict(node_feat)))
+            dag.add_node(node_index, node_uuid=node_uuid, node_tuid=node_tuid, node_type=node_type)
 
         for edge_u_index, edge_v_index in logicx.dag.edges():
             dag.add_edge(edge_u_index, edge_v_index)
