@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2025-04-04 13:46:21
+# Last Modified time: 2025-04-04 13:47:55
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -44,7 +44,7 @@ def check_instance(parameter: tuple[pathlib.Path, int]) -> pathlib.Path | None:
         return None
 
 
-def filter_instance(parameter: tuple[pathlib.Path, pathlib.Path, pathlib.Path, pathlib.Path]) -> tuple[Origin, int, bool, bool, networkx.DiGraph]:
+def filter_instance(parameter: tuple[pathlib.Path, pathlib.Path, pathlib.Path]) -> tuple[Origin, int, bool, bool, networkx.DiGraph]:
     path, std_dirpath, skt_dirpath = parameter
     instance = Instance()
     instance.load(path)
@@ -104,7 +104,7 @@ def main(input_dirpaths: list[pathlib.Path], output_dirpath: pathlib.Path, opset
         with tqdm.tqdm(total=len(check_parameters), desc='Initial Filter - For Opset') as progress_bar:
             for index, path in enumerate(pool.imap_unordered(check_instance, check_parameters), start=1):
                 if path is not None:
-                    filter_paramenters.append((path, std_dirpath, skt_dirpath, pdg_dirpath))
+                    filter_paramenters.append((path, std_dirpath, skt_dirpath))
                 progress_bar.update(1)
     logger.info(f'Total Instances After Initial Opset Filter: {len(filter_paramenters)}')
 
