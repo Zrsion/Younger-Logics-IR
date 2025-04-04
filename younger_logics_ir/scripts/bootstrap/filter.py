@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2025-04-04 14:13:31
+# Last Modified time: 2025-04-04 14:23:19
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -44,7 +44,7 @@ def check_instance(parameter: tuple[pathlib.Path, int]) -> pathlib.Path | None:
         return None
 
 
-def filter_instance(parameter: tuple[pathlib.Path, pathlib.Path, pathlib.Path]) -> tuple[Origin, int, bool, bool, networkx.DiGraph]:
+def filter_instance(parameter: tuple[pathlib.Path, pathlib.Path, pathlib.Path]) -> tuple[Origin, int, bool, bool, str, networkx.DiGraph]:
     path, std_dirpath, skt_dirpath = parameter
     instance = Instance()
     instance.load(path)
@@ -78,7 +78,7 @@ def filter_instance(parameter: tuple[pathlib.Path, pathlib.Path, pathlib.Path]) 
         else:
             skt = False
 
-    return (instance.labels[0].origin, len(org_logicxs), std, skt, family)
+    return (instance.labels[0].origin, len(org_logicxs), std, skt, instance_unique, family)
 
 
 def main(input_dirpaths: list[pathlib.Path], output_dirpath: pathlib.Path, opset_version: int | None = None, worker_number: int = 4):
@@ -112,19 +112,19 @@ def main(input_dirpaths: list[pathlib.Path], output_dirpath: pathlib.Path, opset
     instance_count = 0
     standard_count = 0
     skeleton_count = 0
-    pedigree = networkx.DiGraph()
+    pedigree: dict[str, networkx.DiGraph] = dict()
     with multiprocessing.Pool(worker_number) as pool:
         with tqdm.tqdm(total=len(filter_paramenters), desc='Simplify - Standardize & Skeleonize') as progress_bar:
-            for index, (origin, lgx_count, std, skt, family) in enumerate(pool.imap_unordered(filter_instance, filter_paramenters), start=1):
+            for index, (origin, lgx_count, std, skt, instance_unique, family) in enumerate(pool.imap_unordered(filter_instance, filter_paramenters), start=1):
                 instance_count += lgx_count
                 standard_count += std
                 skeleton_count += skt
-                pedigree.add_nodes_from(family.nodes(data=True))
+                pedigree[instance_unique] = networkx.readwrite.json_graph.adjacency_data(family)
                 pedigree.add_edges_from(family.edges())
                 progress_bar.set_postfix({f'Current Model ID': f'{origin.hub}/{origin.owner}/{origin.name} - {lgx_count}'})
                 progress_bar.update(1)
     logger.info(f'Total/Standard/Skeleton: {instance_count}/{standard_count}/{skeleton_count}')
 
     pdg_filepath = output_dirpath.joinpath('pedigree.json')
-    save_json(networkx.readwrite.json_graph.adjacency_data(pedigree), pdg_filepath, indent=2)
+    save_json(pedigree, pdg_filepath, indent=2)
     logger.info(f'Finished')
