@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2025-04-03 21:57:21
+# Last Modified time: 2025-04-04 12:24:00
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -227,13 +227,6 @@ class LogicX(object):
 
     @classmethod
     def simplify(cls, logicx: 'LogicX') -> tuple['LogicX', list['LogicX']]:
-        """
-        .. todo::
-            All Sub-Graphs Should Be Standardized To LogicX.
-            Sub-Graphs Here is Attributes of an 'Operator' node.
-
-        """
-
         logicx_sons: list['LogicX'] = list()
         logicx_descendants: list['LogicX'] = list()
         for operator_index in logicx.operator_indices:

@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2025-04-03 17:02:40
+# Last Modified time: 2025-04-04 13:10:15
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -42,22 +42,6 @@ def output_filter(
     from younger_logics_ir.scripts.bootstrap import filter
 
     filter.main(input_dirpaths, output_dirpath, opset_version=opset_version, worker_number=worker_number)
-
-
-@output.command(name='clean')
-@click.option('--input-dirpaths',     required=True,  type=click.Path(exists=True, file_okay=False, dir_okay=True, path_type=pathlib.Path), multiple=True, help='The directory where the data will be loaded.')
-@click.option('--output-dirpath',     required=True,  type=click.Path(exists=True, file_okay=False, dir_okay=True, path_type=pathlib.Path), help='The directory where the data will be saved.')
-@click.option('--logging-filepath', required=False, type=click.Path(exists=False, file_okay=True, dir_okay=False, path_type=pathlib.Path), default=None, help='Path to the log file; if not provided, defaults to outputting to the terminal only.')
-def output_clean(
-    input_dirpaths,
-    output_dirpath,
-    logging_filepath,
-):
-    equip_logger(logging_filepath)
-
-    from younger_logics_ir.scripts.bootstrap import clean
-
-    clean.main(input_dirpaths, output_dirpath)
 
 
 @output.command(name='statistics')
