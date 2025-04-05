@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2025-04-04 23:11:44
+# Last Modified time: 2025-04-05 14:12:46
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -274,7 +274,7 @@ class LogicX(object):
                 node_type = node_type,
                 node_attr = node_attr,
             )
-            node_uuid = hash_string(saves_json(get_object_with_sorted_dict(node_feat)))
+            node_uuid = hash_string(saves_json(get_object_with_sorted_dict(node_feat), cls=YLIRJSONEncoder))
             dag.add_node(node_index, node_uuid=node_uuid, node_tuid=node_tuid, node_type=node_type, node_attr=node_attr)
 
         for edge_u_index, edge_v_index in logicx.dag.edges():
@@ -305,7 +305,7 @@ class LogicX(object):
                 node_tuid = node_tuid,
                 node_type = node_type,
             )
-            node_uuid = hash_string(saves_json(get_object_with_sorted_dict(node_feat)))
+            node_uuid = hash_string(saves_json(get_object_with_sorted_dict(node_feat), cls=YLIRJSONEncoder))
             dag.add_node(node_index, node_uuid=node_uuid, node_tuid=node_tuid, node_type=node_type)
 
         for edge_u_index, edge_v_index in logicx.dag.edges():
