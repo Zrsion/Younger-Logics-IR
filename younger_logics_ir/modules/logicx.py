@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2025-04-05 14:12:46
+# Last Modified time: 2025-04-06 10:51:45
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -84,7 +84,7 @@ class LogicX(object):
         ssrc = saves_pickle(self._src)
         srelationship = saves_pickle(self._relationship)
         save_pickle((sdag, ssrc, srelationship), logicx_filepath)
-        return 
+        return
 
     def node_features(self, node_index: str) -> dict[str, str | dict]:
         """
@@ -257,7 +257,17 @@ class LogicX(object):
 
     @classmethod
     def standardize(cls, logicx: 'LogicX') -> 'LogicX':
+        """
+        Standardize LogicX.
+
+        :param logicx: _description_
+        :type logicx: LogicX
+
+        :return: _description_
+        :rtype: LogicX
+        """
         assert logicx.standard, f'\"LogicX\" is not simplified!'
+        logicx = cls.copy(logicx)
         src = logicx.src
         dag = networkx.DiGraph()
         for node_index in logicx.dag.nodes():
@@ -294,8 +304,8 @@ class LogicX(object):
         :return: _description_
         :rtype: LogicX
         """
-
         assert logicx.standard, f'\"LogicX\" is not simplified!'
+        logicx = cls.copy(logicx)
         src = logicx.src
         dag = networkx.DiGraph()
         for node_index in logicx.dag.nodes():

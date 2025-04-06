@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2025-04-04 22:31:05
+# Last Modified time: 2025-04-06 10:42:27
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -54,8 +54,8 @@ def filter_instance(instance_dirpath: pathlib.Path, standard_dirpath: pathlib.Pa
     family = networkx.DiGraph()
 
     for org_logicx in org_logicxs:
-        std_logicx = LogicX.standardize(logicx)
-        skt_logicx = LogicX.skeletonize(logicx)
+        std_logicx = LogicX.standardize(org_logicx)
+        skt_logicx = LogicX.skeletonize(org_logicx)
 
         std_logicx_id = LogicX.hash(std_logicx)
         skt_logicx_id = LogicX.hash(skt_logicx)
