@@ -48,7 +48,7 @@ scripts-hubs-ox = []
 scripts-hubs-tr = ["torch", "torchvision"]
 scripts-hubs = ["numpy", "pandas", "isocodes", "huggingface_hub", "tf2onnx", "optimum[exporters]", "transformers", "diffusers[torch]", "sentence-transformers", "timm", "torch", "torchvision"]
 
-scripts-bootstrap = []
+scripts-bootstrap = ["numpy", "pandas", "scipy", "scikit-learn", "umap", "seaborn", "matplotlib", "hdbscan"]
 
 tools-vs = ["graphviz"]
 tools = ["graphviz"]
