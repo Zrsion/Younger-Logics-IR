@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2025-04-10 22:24:37
+# Last Modified time: 2025-04-12 10:01:43
 # Copyright (c) 2025 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -150,7 +150,7 @@ def extract_embedding_cls(datasets: dict[str, numpy.ndarray], output_dirpath: pa
 
 
 def main(input_names: list[str], input_filepaths: list[pathlib.Path], output_dirpath: pathlib.Path, mode: Literal['cos', 'mmd', 'cls'], standardize: bool = False):
-    datasets: dict[str, list[pathlib.Path]] = {input_name: pandas.read_csv(input_filepath, header=None).values for input_name, input_filepath in zip(input_names, input_filepaths) }
+    datasets: dict[str, list[pathlib.Path]] = {input_name: pandas.read_csv(input_filepath).to_numpy() for input_name, input_filepath in zip(input_names, input_filepaths) }
     if standardize:
         scaler = StandardScaler()
         datasets = {k: scaler.fit_transform(v) for k, v in datasets.items()}
