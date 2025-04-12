@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2025-01-08 10:11:19
+# Last Modified time: 2025-04-12 20:03:26
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -29,13 +29,15 @@ def assort():
 @click.option('--mode',             required=True,  type=click.Choice(['LogicX', 'DAG'], case_sensitive=True), help='Indicates the type of data that needs to be visualized.')
 @click.option('--load-filepath',    required=True,  type=click.Path(exists=True,  file_okay=True, dir_okay=False, path_type=pathlib.Path), help='The directory where the data will be saved.')
 @click.option('--save-filepath',    required=True,  type=click.Path(exists=False, file_okay=True, dir_okay=False, path_type=pathlib.Path), help='The directory where the data will be saved.')
-@click.option('--simplify',         is_flag=True,   help='Use to simplify graph skeleton.')
+@click.option('--simplify',         is_flag=True,   help='Use to simplify graph.')
+@click.option('--skeleton',         is_flag=True,   help='Use to skeleton graph.')
 @click.option('--logging-filepath', required=False, type=click.Path(exists=False, file_okay=True, dir_okay=False, path_type=pathlib.Path), default=None, help='Path to the log file; if not provided, defaults to outputting to the terminal only.')
 def assort_visualize(
     mode,
     load_filepath,
     save_filepath,
     simplify,
+    skeleton,
     logging_filepath,
 ):
     equip_logger(logging_filepath)
@@ -43,7 +45,8 @@ def assort_visualize(
     from younger_logics_ir.scripts.tools import visualize
 
     kwargs = dict(
-        simplify=simplify
+        simplify=simplify,
+        skeleton=skeleton
     )
 
     visualize.main(mode, load_filepath, save_filepath, **kwargs)

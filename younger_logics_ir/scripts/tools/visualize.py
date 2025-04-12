@@ -6,7 +6,7 @@
 # Author: Yikang Yang (杨怡康) & Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2025-01-08 10:17:26
+# Last Modified time: 2025-04-12 20:12:44
 # Copyright (c) 2025 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -24,36 +24,38 @@ from younger.commons.io import load_json
 from younger_logics_ir.modules import LogicX
 
 
-def graphviz_digraph(digraph: networkx.DiGraph, filepath: pathlib.Path, simplify: bool = False):
+def graphviz_digraph(digraph: networkx.DiGraph, filepath: pathlib.Path, simplify: bool = False, skeleton: bool = False):
     import graphviz
     dot = graphviz.Digraph(comment='YLIR - DiGraph Visualization - Through Graphviz')
     dot.attr(rankdir='TB')
 
     simplified_node_indices = set()
     for node_index in digraph.nodes:
+        print(digraph.nodes[node_index])
         mkrstr = f'ID: {node_index}\nTUID: {digraph.nodes[node_index]["node_tuid"]}'
         config = dict()
-        if digraph.nodes[node_index]['node_type'] == 'input' or digraph.nodes[node_index]['node_type'] == 'output':
-            config.update({
-                'style': 'filled',
-                'fillcolor': 'gray'
-            })
-        if digraph.nodes[node_index]['node_type'] == 'outer':
-            config.update({
-                'shape': 'egg',
-                'style': 'filled',
-                'fillcolor': 'darkred'
-            })
-        if digraph.nodes[node_index]['node_type'] == 'operator':
-            op_type = ast.literal_eval(digraph.nodes[node_index]['node_tuid'][len('operator-'):])[0]
-            if simplify and op_type == 'Constant':
-                simplified_node_indices.add(node_index)
-                continue
-            else:
+        if not skeleton:
+            if digraph.nodes[node_index]['node_type'] == 'input' or digraph.nodes[node_index]['node_type'] == 'output':
                 config.update({
-                    'shape': 'box',
-                    'fillcolor': 'lightblue'
+                    'style': 'filled',
+                    'fillcolor': 'gray'
                 })
+            if digraph.nodes[node_index]['node_type'] == 'outer':
+                config.update({
+                    'shape': 'egg',
+                    'style': 'filled',
+                    'fillcolor': 'darkred'
+                })
+            if digraph.nodes[node_index]['node_type'] == 'operator':
+                op_type = ast.literal_eval(digraph.nodes[node_index]['node_tuid'][len('operator-'):])[0]
+                if simplify and op_type == 'Constant':
+                    simplified_node_indices.add(node_index)
+                    continue
+                else:
+                    config.update({
+                        'shape': 'box',
+                        'fillcolor': 'lightblue'
+                    })
         dot.node(node_index, mkrstr, **config)
 
     for tail_index, head_index in digraph.edges:
@@ -65,23 +67,23 @@ def graphviz_digraph(digraph: networkx.DiGraph, filepath: pathlib.Path, simplify
     dot.render(filepath.with_suffix(''), cleanup=True, format="pdf")
 
 
-def visualize_logicx(load_filepath: pathlib.Path, save_filepath: pathlib.Path, simplify: bool = False):
+def visualize_logicx(load_filepath: pathlib.Path, save_filepath: pathlib.Path, simplify: bool = False, skeleton: bool = False):
     logicx = LogicX()
     logicx.load(load_filepath)
-    graphviz_digraph(logicx.dag, save_filepath, simplify=simplify)
+    graphviz_digraph(logicx.dag, save_filepath, simplify=simplify, skeleton=skeleton)
 
 
-def visualize_dag(load_filepath: pathlib.Path, save_filepath: pathlib.Path, simplify: bool = False):
+def visualize_dag(load_filepath: pathlib.Path, save_filepath: pathlib.Path, simplify: bool = False, skeleton: bool = False):
     dic = load_json(load_filepath)
     dag = LogicX.loadd_dag(dic)
-    graphviz_digraph(dag, save_filepath, simplify=simplify)
+    graphviz_digraph(dag, save_filepath, simplify=simplify, skeleton=skeleton)
 
 
 def main(mode: Literal['LogicX', 'DAG'], load_filepath: pathlib.Path, save_filepath: pathlib.Path, **kwargs) -> None:
     assert mode in {'LogicX', 'DAG'}
 
     if mode == 'LogicX':
-        visualize_logicx(load_filepath, save_filepath, simplify=kwargs['simplify'])
+        visualize_logicx(load_filepath, save_filepath, simplify=kwargs['simplify'], skeleton=kwargs['skeleton'])
 
     if mode == 'DAG':
-        visualize_dag(load_filepath, save_filepath, simplify=kwargs['simplify'])
+        visualize_dag(load_filepath, save_filepath, simplify=kwargs['simplify'], skeleton=kwargs['skeleton'])
