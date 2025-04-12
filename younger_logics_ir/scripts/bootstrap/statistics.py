@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2025-04-10 21:27:25
+# Last Modified time: 2025-04-12 13:31:56
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -25,7 +25,7 @@ from typing import Any, Literal
 from collections import Counter
 from scipy.stats import entropy
 
-from younger.commons.io import save_json, get_object_with_sorted_dict
+from younger.commons.io import save_json, create_dir, get_object_with_sorted_dict
 from younger.commons.logging import logger
 
 from younger_logics_ir.modules import LogicX
@@ -258,6 +258,7 @@ def extract_edit_distances(datasets: dict[str, pathlib.Path], output_dirpath: pa
 
 def main(input_names, input_dirpaths: list[pathlib.Path], output_dirpath: pathlib.Path, mode: Literal['junior', 'senior', 'motif', 'edit']):
     datasets: dict[str, list[pathlib.Path]] = {input_name: [logicx_filepath for logicx_filepath in input_dirpath.iterdir()] for input_name, input_dirpath in zip(input_names, input_dirpaths)}
+    create_dir(output_dirpath)
 
     if mode == 'junior':
         logger.info(f'... Junior Statistics ...')
