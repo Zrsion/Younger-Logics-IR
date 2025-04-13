@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2025-04-13 10:45:38
+# Last Modified time: 2025-04-13 11:09:50
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -183,11 +183,14 @@ def extract_motif_statistics(datasets: dict[str, pathlib.Path], output_dirpath: 
             for logicx_filepath in logicx_filepaths:
                 logicx = LogicX()
                 logicx.load(logicx_filepath)
-                for node_index in logicx.dag.nodes:
+                progress_bar.set_postfix({f'Current Hash | # Nodes': f'{logicx_filepath.name}/{len(logicx.dag.nodes)}'})
+                nodes = random.sample(list(logicx.dag.nodes), min(10000, len(logicx.dag.nodes)))
+                for node_index in nodes:
                     for radius in radii:
                         motif = networkx.ego_graph(logicx.dag, node_index, radius=radius, center=True, undirected=True)
                         motif_hash = networkx.weisfeiler_lehman_graph_hash(motif, edge_attr=None, node_attr='node_uuid', iterations=3, digest_size=16)
                         motif_count[motif_hash] = motif_count.get(motif_hash, 0) + 1
+                progress_bar.update(1)
 
         top_k_hashes = sorted(motif_count.keys(), key=lambda x: motif_count[x], reverse=True)[:top_k]
         for candidate_top_k in candidate_top_ks:
