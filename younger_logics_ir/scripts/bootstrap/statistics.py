@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2025-04-12 13:31:56
+# Last Modified time: 2025-04-13 10:38:01
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -29,6 +29,7 @@ from younger.commons.io import save_json, create_dir, get_object_with_sorted_dic
 from younger.commons.logging import logger
 
 from younger_logics_ir.modules import LogicX
+from younger_logics_ir.commons.json import YLIRJSONEncoder
 
 
 def extract_junior_statistics(datasets: dict[str, pathlib.Path], output_dirpath: pathlib.Path):
@@ -94,7 +95,7 @@ def extract_junior_statistics(datasets: dict[str, pathlib.Path], output_dirpath:
         )
 
         logicx_junior_statistics_filepath = output_dirpath.joinpath(f'{dataset_name}_logicx_junior_statistics.json')
-        save_json(logicx_junior_statistics, logicx_junior_statistics_filepath)
+        save_json(logicx_junior_statistics, logicx_junior_statistics_filepath, cls=YLIRJSONEncoder)
         logger.info(f'LogicX Junior Statistics ({dataset_name}) Saved into: {logicx_junior_statistics_filepath}')
 
 
