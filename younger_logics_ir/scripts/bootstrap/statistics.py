@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2025-04-13 11:19:24
+# Last Modified time: 2025-04-13 11:23:34
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -209,6 +209,7 @@ def extract_motif_statistics(datasets: dict[str, pathlib.Path], output_dirpath: 
                 logicx = LogicX()
                 logicx.load(logicx_filepath)
                 progress_bar.set_postfix({f'Current Hash | # Nodes': f'{logicx_filepath.name}/{len(logicx.dag.nodes)}'})
+                nodes = random.sample(list(logicx.dag.nodes), min(10000, len(logicx.dag.nodes)))
                 for node_index in logicx.dag.nodes:
                     for radius in radii:
                         motif = networkx.ego_graph(logicx.dag, node_index, radius=radius, center=True, undirected=True)
