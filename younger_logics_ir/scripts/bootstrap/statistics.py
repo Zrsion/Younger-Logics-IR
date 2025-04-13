@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2025-04-13 11:09:50
+# Last Modified time: 2025-04-13 11:19:24
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -34,6 +34,7 @@ from younger_logics_ir.commons.json import YLIRJSONEncoder
 
 def extract_junior_statistics(datasets: dict[str, pathlib.Path], output_dirpath: pathlib.Path):
     for dataset_name, logicx_filepaths in datasets.items():
+        logger.info(f'Now - {dataset_name}')
         ne_with_max_non = dict(
             number_of_nodes=0,
             number_of_edges=0
@@ -149,6 +150,7 @@ def extract_senior_statistics(datasets: dict[str, pathlib.Path], output_dirpath:
     }
 
     for dataset_name, logicx_filepaths in datasets.items():
+        logger.info(f'Now - {dataset_name}')
         statistics_embeddings = list()
         with tqdm.tqdm(total=len(logicx_filepaths), desc=f"Extracting stats: {dataset_name}") as progress_bar:
             for logicx_filepath in logicx_filepaths:
@@ -178,6 +180,7 @@ def extract_motif_statistics(datasets: dict[str, pathlib.Path], output_dirpath: 
     motif_number: dict[str, int] = dict()
     logger.info(f' - First Scanning ...')
     for dataset_name, logicx_filepaths in datasets.items():
+        logger.info(f'Now - {dataset_name}')
         motif_count: dict[str, int] = dict()
         with tqdm.tqdm(total=len(logicx_filepaths), desc=f"Extracting stats: {dataset_name}") as progress_bar:
             for logicx_filepath in logicx_filepaths:
@@ -199,11 +202,13 @@ def extract_motif_statistics(datasets: dict[str, pathlib.Path], output_dirpath: 
         motif_number[dataset_name] = sum(motif_count.values())
 
     for dataset_name, logicx_filepaths in datasets.items():
+        logger.info(f'Now - {dataset_name}')
         motif_count: dict[str, int] = dict()
         with tqdm.tqdm(total=len(logicx_filepaths), desc=f"Extracting stats: {dataset_name}") as progress_bar:
             for logicx_filepath in logicx_filepaths:
                 logicx = LogicX()
                 logicx.load(logicx_filepath)
+                progress_bar.set_postfix({f'Current Hash | # Nodes': f'{logicx_filepath.name}/{len(logicx.dag.nodes)}'})
                 for node_index in logicx.dag.nodes:
                     for radius in radii:
                         motif = networkx.ego_graph(logicx.dag, node_index, radius=radius, center=True, undirected=True)
@@ -211,6 +216,7 @@ def extract_motif_statistics(datasets: dict[str, pathlib.Path], output_dirpath: 
                         if motif_hash in motif_hashes:
                             motif_count[motif_hash] = motif_count.get(motif_hash, 0) + 1
                             motif_lookup[motif_hash] = motif_lookup.get(motif_hash, LogicX.saves_dag(motif))
+                progress_bar.update(1)
 
         motif_statistics = list()
         for motif_hash in motif_hashes:
@@ -233,13 +239,14 @@ def extract_motif_statistics(datasets: dict[str, pathlib.Path], output_dirpath: 
 
 
 def extract_edit_distances(datasets: dict[str, pathlib.Path], output_dirpath: pathlib.Path):
-    sample_number = 1000
+    sample_number = 100
     datasets = {
         dataset_name: random.sample(logicx_filepaths, min(sample_number, len(logicx_filepaths)))
         for dataset_name, logicx_filepaths in datasets.items()
     }
 
     for dataset_name, logicx_filepaths in datasets.items():
+        logger.info(f'Now - {dataset_name}')
         logicxs: list[LogicX] = list()
         for logicx_filepath in logicx_filepaths:
             logicx = LogicX()
@@ -254,7 +261,7 @@ def extract_edit_distances(datasets: dict[str, pathlib.Path], output_dirpath: pa
                     dag1, dag2 = logicxs[i].dag, logicxs[j].dag
                     upper_bound = abs(len(dag1.nodes) - len(dag2.nodes)) + abs(len(dag1.edges) - len(dag2.edges))
                     d = networkx.graph_edit_distance(dag1, dag2, node_match=lambda a, b: a['node_uuid'] == b['node_uuid'], upper_bound=2*upper_bound, timeout=2)
-                    edit_distances[i, j] = edit_distances[j, i] = d if d is not None else 0
+                    edit_distances[i, j] = edit_distances[j, i] = d if d is not None else -1
                     progress_bar.update(1)
         data_frame = pandas.DataFrame(edit_distances)
         data_frame.to_csv(output_dirpath.joinpath(f'{dataset_name}_logicx_edit_distance.csv'), index=False)
