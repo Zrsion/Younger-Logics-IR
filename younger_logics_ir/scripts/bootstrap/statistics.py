@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2025-04-13 10:38:01
+# Last Modified time: 2025-04-13 10:45:38
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -157,7 +157,7 @@ def extract_senior_statistics(datasets: dict[str, pathlib.Path], output_dirpath:
                 statistics_embeddings.append(compute_statistics_embedding(logicx.dag))
                 progress_bar.update(1)
         data_frame = pandas.DataFrame(statistics_embeddings)
-        data_frame.to_csv(output_dirpath.joinpath(f'{dataset_name}_logicx_junior_statistics.csv'), index=False)
+        data_frame.to_csv(output_dirpath.joinpath(f'{dataset_name}_logicx_senior_statistics.csv'), index=False)
 
 
 def extract_motif_statistics(datasets: dict[str, pathlib.Path], output_dirpath: pathlib.Path):
