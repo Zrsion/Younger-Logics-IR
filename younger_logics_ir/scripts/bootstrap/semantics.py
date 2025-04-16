@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2025-04-16 10:56:40
+# Last Modified time: 2025-04-16 11:05:45
 # Copyright (c) 2025 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -160,12 +160,12 @@ def main(input_names: list[str], input_filepaths: list[pathlib.Path], output_dir
 
     if mode == 'cos':
         logger.info(f'... COS Statistics ...')
-        extract_embedding_cos(datasets, output_dirpath, standardize)
+        extract_embedding_cos(datasets, output_dirpath)
 
     if mode == 'mmd':
         logger.info(f'... MMD Statistics ...')
-        extract_embedding_mmd(datasets, output_dirpath, standardize)
+        extract_embedding_mmd(datasets, output_dirpath)
 
     if mode == 'cls':
         logger.info(f'... CLS Statistics ...')
-        extract_embedding_cls(datasets, output_dirpath, standardize)
+        extract_embedding_cls(datasets, output_dirpath)
