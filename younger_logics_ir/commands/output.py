@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2025-04-16 10:14:55
+# Last Modified time: 2025-04-16 10:56:39
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -68,7 +68,7 @@ def output_statistics(
 @click.option('--input-names',      required=True,  type=str, multiple=True, help='The name of each dataset.')
 @click.option('--input-filepaths',  required=True,  type=click.Path(exists=True, file_okay=False, dir_okay=True, path_type=pathlib.Path), multiple=True, help='The filepath where the embeddings of each dataset will be loaded.')
 @click.option('--output-dirpath',   required=True,  type=click.Path(exists=True, file_okay=False, dir_okay=True, path_type=pathlib.Path), help='The directory where the data will be saved.')
-@click.option('--mode',             required=True,  type=click.Choice(['mmd', 'senior', 'motif', 'edit'], case_sensitive=True), help='Indicates the type of data that needs to be semantically analyzed.')
+@click.option('--mode',             required=True,  type=click.Choice(['cos', 'mmd', 'cls'], case_sensitive=True), help='Indicates the type of data that needs to be semantically analyzed.')
 @click.option('--standardize',      is_flag=True,   help='Indicates the type of data that needs to be semantically analyzed.')
 @click.option('--logging-filepath', required=False, type=click.Path(exists=False, file_okay=True, dir_okay=False, path_type=pathlib.Path), default=None, help='Path to the log file; if not provided, defaults to outputting to the terminal only.')
 def output_statistics(
