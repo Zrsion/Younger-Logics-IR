@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2025-04-16 11:05:45
+# Last Modified time: 2025-04-27 09:55:36
 # Copyright (c) 2025 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -47,9 +47,9 @@ def extract_embedding_cos(datasets: dict[str, numpy.ndarray], output_dirpath: pa
 
     plt.figure(figsize=(6, 5))
     sns.heatmap(cos_matrix, annot=True, cmap='Blues')
-    plt.title('Cosine Distance Between Dataset Embedding Centers')
+    # plt.title('Cosine Distance Between Dataset Embedding Centers')
     plt.tight_layout()
-    plt.savefig(output_dirpath.joinpath('embedding_cos_heatmap.png'))
+    plt.savefig(output_dirpath.joinpath('embedding_cos_heatmap.pdf'), format='pdf', dpi=300, bbox_inches='tight')
     cos_matrix.to_csv(output_dirpath.joinpath('embedding_cos_matrix.csv'))
 
 
@@ -70,9 +70,9 @@ def extract_embedding_mmd(datasets: dict[str, numpy.ndarray], output_dirpath: pa
 
     plt.figure(figsize=(6, 5))
     sns.heatmap(mmd_matrix, annot=True, cmap='coolwarm')
-    plt.title('MMD Distance Between Dataset Embeddings')
+    # plt.title('MMD Distance Between Dataset Embeddings')
     plt.tight_layout()
-    plt.savefig(output_dirpath.joinpath('embedding_mmd_heatmap.png'))
+    plt.savefig(output_dirpath.joinpath('embedding_mmd_heatmap.pdf'), format='pdf', dpi=300, bbox_inches='tight')
     mmd_matrix.to_csv(output_dirpath.joinpath('embedding_mmd_matrix.csv'))
 
 
@@ -104,11 +104,11 @@ def extract_embedding_cls(datasets: dict[str, numpy.ndarray], output_dirpath: pa
             df_kmeans['label'] = final_kmeans.labels_
             plt.figure(figsize=(5, 4))
             sns.scatterplot(x='x', y='y', hue='label', data=df_kmeans, palette='tab10', s=10)
-            plt.title(f'{name} - {method.upper()} + KMeans (k={best_k}, Silhouette={best_score:.2f})')
+            # plt.title(f'{name} - {method.upper()} + KMeans (k={best_k}, Silhouette={best_score:.2f})')
             plt.legend().remove()
             plt.tight_layout()
-            filename_kmeans = output_dirpath.joinpath(f'{name}_embedding_{method}_kmeans.png')
-            plt.savefig(filename_kmeans)
+            filename_kmeans = output_dirpath.joinpath(f'{name}_embedding_{method}_kmeans.pdf')
+            plt.savefig(filename_kmeans, format='pdf', dpi=300, bbox_inches='tight')
             plt.close()
 
             summary.append({
@@ -132,11 +132,11 @@ def extract_embedding_cls(datasets: dict[str, numpy.ndarray], output_dirpath: pa
             df_hdb['label'] = labels
             plt.figure(figsize=(5, 4))
             sns.scatterplot(x='x', y='y', hue='label', data=df_hdb, palette='tab10', s=10)
-            plt.title(f'{name} - {method.upper()} + HDBSCAN (k={n_clusters}, Silhouette={score:.2f})')
+            # plt.title(f'{name} - {method.upper()} + HDBSCAN (k={n_clusters}, Silhouette={score:.2f})')
             plt.legend().remove()
             plt.tight_layout()
-            filename_hdb = output_dirpath.joinpath(f'{name}_embedding_{method}_hdbscan.png')
-            plt.savefig(filename_hdb)
+            filename_hdbscan = output_dirpath.joinpath(f'{name}_embedding_{method}_hdbscan.pdf')
+            plt.savefig(filename_hdbscan, format='pdf', dpi=300, bbox_inches='tight')
             plt.close()
 
             summary.append({

@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2025-04-12 20:03:26
+# Last Modified time: 2025-04-30 16:51:20
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -50,3 +50,48 @@ def assort_visualize(
     )
 
     visualize.main(mode, load_filepath, save_filepath, **kwargs)
+
+@assort.command(name='statistics')
+@click.option('--input-names',      required=True,  type=str, multiple=True, help='The name of each dataset.')
+@click.option('--input-dirpaths',   required=True,  type=click.Path(exists=True, file_okay=False, dir_okay=True, path_type=pathlib.Path), multiple=True, help='The directory where the dataset will be loaded.')
+@click.option('--output-dirpath',   required=True,  type=click.Path(exists=True, file_okay=False, dir_okay=True, path_type=pathlib.Path), help='The directory where the data will be saved.')
+@click.option('--mode',             required=True,  type=click.Choice(['junior', 'senior', 'motif', 'edit'], case_sensitive=True), help='Indicates the type of data that needs to be statistically analyzed.')
+@click.option('--sample-number',    required=False, type=int, default=None, help='Indicates the type of data that needs to be semantically analyzed.')
+@click.option('--worker-number',    required=False, type=int, default=None, help='Number of workers for speeding up (only support modes: `motif`).')
+@click.option('--logging-filepath', required=False, type=click.Path(exists=False, file_okay=True, dir_okay=False, path_type=pathlib.Path), default=None, help='Path to the log file; if not provided, defaults to outputting to the terminal only.')
+def output_statistics(
+    input_names,
+    input_dirpaths,
+    output_dirpath,
+    mode,
+    sample_number,
+    worker_number,
+    logging_filepath,
+):
+    equip_logger(logging_filepath)
+
+    from younger_logics_ir.scripts.tools import statistics
+
+    statistics.main(input_names, input_dirpaths, output_dirpath, mode, sample_number, worker_number)
+
+
+@assort.command(name='semantics')
+@click.option('--input-names',      required=True,  type=str, multiple=True, help='The name of each dataset.')
+@click.option('--input-filepaths',  required=True,  type=click.Path(exists=True, file_okay=True, dir_okay=False, path_type=pathlib.Path), multiple=True, help='The filepath where the embeddings of each dataset will be loaded.')
+@click.option('--output-dirpath',   required=True,  type=click.Path(exists=True, file_okay=False, dir_okay=True, path_type=pathlib.Path), help='The directory where the data will be saved.')
+@click.option('--mode',             required=True,  type=click.Choice(['cos', 'mmd', 'cls'], case_sensitive=True), help='Indicates the type of data that needs to be semantically analyzed.')
+@click.option('--standardize',      is_flag=True,   help='Indicates the type of data that needs to be semantically analyzed.')
+@click.option('--logging-filepath', required=False, type=click.Path(exists=False, file_okay=True, dir_okay=False, path_type=pathlib.Path), default=None, help='Path to the log file; if not provided, defaults to outputting to the terminal only.')
+def output_statistics(
+    input_names,
+    input_filepaths,
+    output_dirpath,
+    mode,
+    standardize,
+    logging_filepath,
+):
+    equip_logger(logging_filepath)
+
+    from younger_logics_ir.scripts.tools import semantics
+
+    semantics.main(input_names, input_filepaths, output_dirpath, mode, standardize)
