@@ -6,7 +6,7 @@
 # Author: Jason Young (杨郑鑫).
 # E-Mail: AI.Jason.Young@outlook.com
 # Last Modified by: Jason Young (杨郑鑫)
-# Last Modified time: 2024-12-31 23:42:06
+# Last Modified time: 2025-05-01 19:18:51
 # Copyright (c) 2024 Yangs.AI
 # 
 # This source code is licensed under the Apache License 2.0 found in the
@@ -21,7 +21,7 @@ from younger.commons.hash import hash_string
 
 
 class Origin(object):
-    def __init__(self, hub: str, owner: str, name: str):
+    def __init__(self, hub: str, owner: str, name: str, artifact: str | None = None):
         """
 
         :param hub: _description_
@@ -30,26 +30,30 @@ class Origin(object):
         :type owner: str
         :param name: _description_
         :type name: str
+        :param artifact: _description_
+        :type artifact: str
 
         Hub: The hub where the Implementation is located
         Owner: The owner of the Implementation
         Name: The name of the Implementation
-        <Hub, Owner, Name> is the unique identifier of the Implementation
+        Artifact: The artifact (remote filepath) of the Implementation
+        <Hub, Owner, Name, Artifact> is the unique identifier of the Implementation
 
         """
 
         self._hub = hub
         self._owner = owner
         self._name = name
+        self._artifact = artifact
 
     def __hash__(self):
-        return hash((self.hub, self.owner, self.name))
+        return hash((self.hub, self.owner, self.name, self.artifact))
 
     def __str__(self):
-        return f'Origin - <Hub/Owner/Name>: <{self.hub}/{self.owner}/{self.name}>'
+        return f'Origin - <Hub/Owner/Name/Artifact>: <{self.hub}/{self.owner}/{self.name}/{self.artifact}>'
 
     def __eq__(self, other: 'Origin') -> bool:
-        return self.hub == other.hub and self.owner == other.owner and self.name == other.name
+        return self.hub == other.hub and self.owner == other.owner and self.name == other.name and self.artifact == other.artifact
 
     @property
     def hub(self) -> str:
@@ -63,12 +67,17 @@ class Origin(object):
     def name(self) -> str:
         return self._name
 
+    @property
+    def artifact(self) -> str | None:
+        return self._artifact
+
     @classmethod
     def load_dict(cls, d: dict) -> 'Origin':
         o = Origin(
             d['hub'],
             d['owner'],
             d['name'],
+            d['artifact'],
         )
         return o
 
@@ -78,6 +87,7 @@ class Origin(object):
             hub=o._hub,
             owner=o._owner,
             name=o._name,
+            artifact=o._artifact,
         )
         return d
 
